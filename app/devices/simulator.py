@@ -1,6 +1,7 @@
 from .base import DeviceControlInterface
 from typing import Dict
 
+# Assigned to: Person C (Device simulation)
 class DeviceSimulator(DeviceControlInterface):
     """
     Simulated device controller for testing and development.
@@ -9,7 +10,7 @@ class DeviceSimulator(DeviceControlInterface):
         """
         Input: Dict[str, str] — Device command
         Output: str — Action result
-        Action: Simulate device control and update state
+        Calls: Simulated device logic
         """
         # TODO: Simulate device action
         return "[Simulated] Device control executed."
@@ -18,7 +19,7 @@ class DeviceSimulator(DeviceControlInterface):
         """
         Input: None
         Output: Dict[str, str] — Current device states
-        Action: Return simulated device states
+        Calls: Simulated state query
         """
         # TODO: Return simulated states
         return {}

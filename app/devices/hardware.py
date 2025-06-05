@@ -1,6 +1,7 @@
 from .base import DeviceControlInterface
 from typing import Dict
 
+# Assigned to: Person C (Hardware control)
 class HardwareDeviceController(DeviceControlInterface):
     """
     Real hardware device controller using GPIO or similar libraries.
@@ -9,7 +10,7 @@ class HardwareDeviceController(DeviceControlInterface):
         """
         Input: Dict[str, str] — Device command
         Output: str — Action result
-        Action: Send control signal to hardware (GPIO, etc.)
+        Calls: Hardware APIs (GPIO, etc.)
         """
         # TODO: Implement hardware control logic
         return "[Hardware] Device control simulated."
@@ -18,7 +19,7 @@ class HardwareDeviceController(DeviceControlInterface):
         """
         Input: None
         Output: Dict[str, str] — Current device states
-        Action: Return current hardware device states
+        Calls: Hardware state query
         """
         # TODO: Implement state tracking
         return {}

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+# Assigned to: Person A (Data pipeline)
 class TimeUtils:
     """
     Provides current time and date utilities.
@@ -8,7 +9,7 @@ class TimeUtils:
         """
         Input: None
         Output: str — Current time (e.g., "12:45 PM")
-        Action: Return formatted current time
+        Calls: datetime.now()
         """
         # TODO: Implement time formatting as needed
         return datetime.now().strftime("%I:%M %p")
@@ -17,7 +18,7 @@ class TimeUtils:
         """
         Input: None
         Output: str — Current date (e.g., "2025-06-05")
-        Action: Return formatted current date
+        Calls: datetime.now()
         """
         # TODO: Implement date formatting as needed
         return datetime.now().strftime("%Y-%m-%d")

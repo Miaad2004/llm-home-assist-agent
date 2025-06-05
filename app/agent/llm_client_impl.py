@@ -1,5 +1,6 @@
 from .base import LLMClientInterface
 
+# Assigned to: Person A (UI LLM integration)
 class GroqLLMClient(LLMClientInterface):
     """
     LLM client implementation for Groq API.
@@ -8,11 +9,12 @@ class GroqLLMClient(LLMClientInterface):
         """
         Input: str — Prompt
         Output: str — LLM response
-        Action: Send prompt to Groq API and return response
+        Calls: Groq API
         """
         # TODO: Implement Groq API call
         return "[Groq] LLM response."
 
+# Assigned to: Person B (Voice LLM integration)
 class TogetherAILLMClient(LLMClientInterface):
     """
     LLM client implementation for TogetherAI API.
@@ -21,7 +23,7 @@ class TogetherAILLMClient(LLMClientInterface):
         """
         Input: str — Prompt
         Output: str — LLM response
-        Action: Send prompt to TogetherAI API and return response
+        Calls: TogetherAI API
         """
         # TODO: Implement TogetherAI API call
         return "[TogetherAI] LLM response."

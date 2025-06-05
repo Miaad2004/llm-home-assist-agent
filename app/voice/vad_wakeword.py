@@ -1,6 +1,6 @@
 from .base import VoiceAssistantInterface
 
-
+# Assigned to: Person B (Voice pipeline)
 class VADWakeword:
     """
     Handles wake word detection and voice activity detection.
@@ -10,7 +10,7 @@ class VADWakeword:
         """
         Input: str — Path to audio file
         Output: bool — True if wake word detected
-        Action: Detect wake word in audio
+        Calls: Wakeword/VAD engine
         """
         # TODO: Implement wake word detection
         return False
