@@ -43,7 +43,7 @@ class SmartHomeUIManagerImpl(SmartHomeUIManager):
         # TODO: Implement voice input handling
         pass
 
-    # Assigned to: Person A (UI pipeline)
+    # Assigned to: Person B (UI pipeline)
     def display_response(self, text: str) -> None:
         """
         Input: str — System message
@@ -54,7 +54,7 @@ class SmartHomeUIManagerImpl(SmartHomeUIManager):
         # TODO: Implement response display
         pass
 
-    # Assigned to: Person A (UI pipeline)
+    # Assigned to: Person B (UI pipeline)
     def update_device_status_ui(self, device_states: Dict[str, str]) -> None:
         """
         Input: Dict[str, str] — Device states

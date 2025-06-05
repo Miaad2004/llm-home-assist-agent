@@ -1,6 +1,6 @@
 from datetime import datetime
 
-# Assigned to: Person A (Data pipeline)
+# Assigned to: Person C (Data pipeline)
 class TimeUtils:
     """
     Provides current time and date utilities.

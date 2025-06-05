@@ -26,7 +26,7 @@ class SmartHomeUIManager(ABC):
         """
         pass
 
-    # Assigned to: Person A (UI pipeline)
+    # Assigned to: Person B (UI pipeline)
     @abstractmethod
     def display_response(self, text: str) -> None:
         """
@@ -36,7 +36,7 @@ class SmartHomeUIManager(ABC):
         """
         pass
 
-    # Assigned to: Person A (UI pipeline)
+    # Assigned to: Person B (UI pipeline)
     @abstractmethod
     def update_device_status_ui(self, device_states: Dict[str, str]) -> None:
         """
