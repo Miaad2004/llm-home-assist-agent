@@ -1,0 +1,11 @@
+# Core dependencies
+openai
+requests
+python-dotenv
+# Voice
+whisper
+coqui-ai
+# UI (example)
+flask
+# Hardware (optional)
+RPi.GPIO; platform_system == "Linux"
