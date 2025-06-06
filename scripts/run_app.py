@@ -9,6 +9,7 @@ from app.ui.ui_impl import SmartHomeUIManagerImpl
 from config.settings import Settings
 from tests.test_tools import run_test_tools
 from colorama import Fore, Back, Style, init
+import os
 
 from app.tools import tools
 
@@ -16,6 +17,11 @@ from app.tools import tools
 init(autoreset=True)
 
 def main():
+    # Clear the console on start (cross-platform)
+    if os.name == 'nt':
+        os.system('cls')
+    else:
+        os.system('clear')
     llm_client = GenericLLMClient()
     agent = MyAgent(llm_client=llm_client, 
                     tools=tools.TOOLS)
