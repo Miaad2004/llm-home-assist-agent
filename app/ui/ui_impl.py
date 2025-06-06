@@ -1,6 +1,6 @@
 from .base import SmartHomeUIManager
 from typing import Dict
-from app.agent.agent_impl import DeviceCommandAgentImpl
+from app.agent.agent_impl import MyAgent
 from app.agent.llm_client_impl import GenericOpenAILLMClient
 from app.voice.base import VoiceAssistantInterface
 

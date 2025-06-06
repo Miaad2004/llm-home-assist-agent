@@ -1,5 +1,9 @@
 # run_app.ps1
 
+param(
+    [switch]$ForceInstall
+)
+
 $venvPath = "$PSScriptRoot\agent_venv"
 $venvPython = "$venvPath\Scripts\python.exe"
 
@@ -13,8 +17,13 @@ if (-Not (Test-Path $venvPython)) {
 }
 else {
     Write-Host "Virtual environment already exists. Skipping setup."
+    if ($ForceInstall) {
+        Write-Host "Force installing requirements..."
+        & $venvPython -m pip install --upgrade pip
+        & $venvPython -m pip install -r "$PSScriptRoot\requirements.txt"
+    }
 }
 
 # Set PYTHONPATH and run the app
 $env:PYTHONPATH = "$PSScriptRoot"
-& $venvPython "$PSScriptRoot\scripts\run_app_new.py"
+& $venvPython "$PSScriptRoot\scripts\run_app.py"

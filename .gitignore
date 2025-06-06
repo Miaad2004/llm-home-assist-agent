@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+agent_venv/
 build/
 develop-eggs/
 dist/
@@ -65,3 +66,7 @@ coverage.xml
 # OS
 .DS_Store
 Thumbs.db
+
+.exe
+
+smart-home-assistant/agent_venv/
