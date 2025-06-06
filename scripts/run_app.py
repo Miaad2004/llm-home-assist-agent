@@ -13,7 +13,8 @@ def main():
     # Initialize components
     api_key = Settings.GROQ_API_KEY or ""
     api_base = getattr(Settings, "GROQ_API_ENDPOINT", "")
-    llm_client = GenericOpenAILLMClient(api_key=api_key, model="gemma2-9b-it", api_base=api_base)
+    system_prompt_path = Settings.SYSTEM_PROMPT_PATH or ""
+    llm_client = GenericOpenAILLMClient(api_key=api_key, model="gemma2-9b-it", api_base=api_base, system_prompt_path=system_prompt_path)
     # device_controller = DeviceSimulator()
     # agent = DeviceCommandAgentImpl(llm_client, device_controller)
     # ui = SmartHomeUIManagerImpl(agent=agent)
