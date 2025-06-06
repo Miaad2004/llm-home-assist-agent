@@ -1,54 +1,42 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Literal
+import pydantic
+from typing import Dict, Any, Optional
 
-CommandDict = Dict[str, str]
+class Response(pydantic.BaseModel):
+    Question: str
+    Thought: str
+    tools_used: list[str]
+    tool_arguments: Dict[str, Dict[str, Any]] = {}  
+    Answer: Optional[str]
+
+class ToolOutput(pydantic.BaseModel): 
+    OriginalQuestion: str
+    tools_used: list[str]
+    tool_output: Dict[str, str]
+
 
 class DeviceCommandAgent(ABC):
     """
-    Handles LLM communication, command parsing, and device function routing.
-
-    Role: 
-    - Interpret text commands from users (text or transcribed)
-    - Interface with LLMs to understand intent
-    - Parse structured actions and execute them via device control layer
+    Abstract base class for handling user commands and device control.
     """
 
     @abstractmethod
     def handle_user_input(self, user_text: str) -> str:
         """
-        Input: str — Raw text from user input or transcribed voice command
-        Output: str — Final system message to return to the user (e.g., "TV turned on.")
-        Called by: SmartHomeUIManager, VoiceAssistantInterface
-        Calls: send_prompt(), parse_llm_response(), call_device_function()
+        Processes user input and returns a system response.
         """
         pass
 
     @abstractmethod
-    def get_live_data(self, data_type: Literal["weather", "news", "time"]) -> str:
+    def parse_llm_response(self, llm_output: str) -> Response:
         """
-        Input: Literal — One of: "weather", "news", or "time"
-        Output: str — Current live data value (e.g., "Sunny, 24°C", "12:45 PM")
-        Called by: SmartHomeUIManager
-        Calls: external data APIs
+        Parses LLM output into a structured command.
         """
         pass
 
     @abstractmethod
-    def parse_llm_response(self, llm_output: str) -> CommandDict:
+    def call_tool(self, original_question: str, tools_used: list[str]) -> ToolOutput:
         """
-        Input: str — Raw output from LLM (natural language)
-        Output: Dict[str, str] — Parsed command (e.g., {"device": "ac", "location": "room1", "action": "off"})
-        Called by: handle_user_input()
-        Calls: None
-        """
-        pass
-
-    @abstractmethod
-    def call_device_function(self, command: CommandDict) -> str:
-        """
-        Input: Dict[str, str] — Structured command extracted from LLM output
-        Output: str — Execution result (e.g., "Room 1 AC turned off.")
-        Called by: handle_user_input()
-        Calls: DeviceControlInterface.control_device()
+        Executes a command using the device control layer.
         """
         pass
