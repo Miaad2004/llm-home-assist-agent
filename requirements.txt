@@ -3,3 +3,4 @@ python-dotenv
 duckduckgo-search
 requests
 beautifulsoup4
+pyserial

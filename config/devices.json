@@ -1,0 +1,48 @@
+[
+  {
+    "id": "bedroom_light",
+    "name": "Bedroom Light",
+    "description": "Ceiling LED light in the bedroom.",
+    "actions": [
+      {
+        "name": "turn_on",
+        "description": "Turn the bedroom light on.",
+        "args": []
+      },
+      {
+        "name": "turn_off",
+        "description": "Turn the bedroom light off.",
+        "args": []
+      },
+      {
+        "name": "set_brightness",
+        "description": "Set the brightness level (0-100%).",
+        "args": [
+          {
+            "name": "level",
+            "description": "Brightness percentage (0-100).",
+            "example": 75
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ir_led",
+    "name": "Infrared LED",
+    "description": "Infrared LED capable of sending arbitrary codes.",
+    "actions": [
+      {
+        "name": "send_code",
+        "description": "Send an arbitrary infrared code.",
+        "args": [
+          {
+            "name": "code",
+            "description": "The IR code to send (hex or protocol-specific).",
+            "example": "0x20DF10EF"
+          }
+        ]
+      }
+    ]
+  }
+]
