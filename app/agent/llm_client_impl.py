@@ -2,6 +2,7 @@ from .llm_client import LLMClientInterface
 import openai
 from typing import Dict, List, Any, Union
 
+    
 class GenericOpenAILLMClient(LLMClientInterface):
     """
     Generic LLM client implementation using the openai library.
@@ -38,6 +39,7 @@ class GenericOpenAILLMClient(LLMClientInterface):
             )
             
             self.history.append({"role": "assistant", "content": response.choices[0].message.content})
+            
             return response.choices[0].message.content
         
         except Exception as e:

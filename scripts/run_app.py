@@ -8,6 +8,7 @@ from app.devices.hardware import ArduinoHardwareSimulator
 from app.ui.ui_impl import SmartHomeUIManagerImpl
 from config.settings import Settings
 
+from app.data import tools
 
 def main():
     # Initialize components
@@ -16,7 +17,7 @@ def main():
     system_prompt_path = Settings.SYSTEM_PROMPT_PATH or ""
     llm_client = GenericOpenAILLMClient(api_key=api_key, model="gemma2-9b-it", api_base=api_base, system_prompt_path=system_prompt_path)
     # device_controller = DeviceSimulator()
-    # agent = DeviceCommandAgentImpl(llm_client, device_controller)
+    agent = MyAgent(llm_client=llm_client, tools=tools)
     # ui = SmartHomeUIManagerImpl(agent=agent)
 
     print("Smart Home Assistant (text demo mode)")
@@ -27,7 +28,7 @@ def main():
             print("Goodbye!")
             break
         # Agent handles user input and returns system message
-        response = llm_client.send_prompt(user_text)
+        response = agent.handle_user_input(user_text)
         print(f"Assistant: {response}")
         #ui.display_response(response)
 

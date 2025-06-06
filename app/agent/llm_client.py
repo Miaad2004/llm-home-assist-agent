@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Union, Any
 
+
 class LLMClientInterface(ABC):
     """
     Encapsulates communication with an external large language model (LLM).
