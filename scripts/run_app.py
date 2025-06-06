@@ -8,8 +8,12 @@ from app.devices.hardware import ArduinoHardwareSimulator
 from app.ui.ui_impl import SmartHomeUIManagerImpl
 from config.settings import Settings
 from tests.test_tools import run_test_tools
+from colorama import Fore, Back, Style, init
 
 from app.tools import tools
+
+# Initialize colorama for Windows compatibility
+init(autoreset=True)
 
 def main():
     llm_client = GenericLLMClient()
@@ -17,16 +21,20 @@ def main():
                     tools=tools.TOOLS)
     # ui = SmartHomeUIManagerImpl(agent=agent)
 
-    print("Smart Home Assistant (text demo mode)")
-    print("Type 'exit' to quit.")
+    print(f"{Fore.CYAN}{Style.BRIGHT}╔══════════════════════════════════════╗")
+    print(f"║        Smart Home Assistant          ║")
+    print(f"║         (Text Demo Mode)             ║")
+    print(f"╚══════════════════════════════════════╝{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}💡 Type 'exit' to quit.{Style.RESET_ALL}\n")
+    
     while True:
-        user_text = input("You: ")
+        user_text = input(f"{Fore.GREEN}🏠 You: {Style.RESET_ALL}")
         if user_text.strip().lower() == "exit":
-            print("Goodbye!")
+            print(f"{Fore.MAGENTA}👋 Goodbye!{Style.RESET_ALL}")
             break
         # Agent handles user input and returns system message
         response = agent.handle_user_input(user_text)
-        print(f"Assistant: {response}")
+        print(f"{Fore.BLUE}🤖 Assistant: {Fore.WHITE}{response}{Style.RESET_ALL}\n")
         #ui.display_response(response)
 
 
