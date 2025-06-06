@@ -17,4 +17,4 @@ else {
 
 # Set PYTHONPATH and run the app
 $env:PYTHONPATH = "$PSScriptRoot"
-& $venvPython "$PSScriptRoot\scripts\run_app.py"
+& $venvPython "$PSScriptRoot\scripts\run_app_new.py"

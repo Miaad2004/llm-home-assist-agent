@@ -1,5 +1,6 @@
 from .llm_client import LLMClientInterface
 import openai
+from typing import Dict, List, Any, Union
 
 class GenericOpenAILLMClient(LLMClientInterface):
     """
@@ -34,3 +35,46 @@ class GenericOpenAILLMClient(LLMClientInterface):
             return response.choices[0].message.content
         except Exception as e:
             return f"[Error] {str(e)}"
+            
+    def send_prompt_with_functions(self, messages: List[Dict[str, str]], functions: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Input: 
+            messages: List[Dict[str, str]] — Conversation messages
+            functions: List[Dict[str, Any]] — Function definitions
+        Output: Dict[str, Any] — Response from LLM with possible function calls
+        Called by: DeviceCommandAgentImpl.handle_user_input()
+        Calls: External LLM API with function calling enabled
+        """
+        openai.api_key = self.api_key
+        if self.api_base:
+            openai.base_url = self.api_base
+            
+        try:
+            # Convert functions to OpenAI's format
+            tools = [{"type": "function", "function": func} for func in functions]
+            
+            response = openai.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto"
+            )
+            
+            message = response.choices[0].message
+            
+            # Create a response dictionary that includes function call info if present
+            result = {"content": message.content or ""}
+            
+            # Check if function call was made
+            if message.tool_calls:
+                tool_call = message.tool_calls[0]
+                function_call = {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments
+                }
+                result["function_call"] = function_call
+                
+            return result
+            
+        except Exception as e:
+            return {"content": f"[Error] {str(e)}"}

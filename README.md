@@ -11,15 +11,45 @@ A modular, voice-enabled smart home assistant with LLM-based command parsing, de
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and fill in API keys/configs.
+1. Copy `example.env` to `.env` and fill in your API keys/configs.
+   - You'll need at least one of: OpenAI API key, Groq API key, or TogetherAI API key
+   - Optional: Add weather and news API keys for live data
 2. Install dependencies:
    ```sh
    pip install -r requirements.txt
    ```
 3. Run the app:
    ```sh
-   python scripts/run_app.py
+   python scripts/run_app_new.py
    ```
+
+## Usage
+
+The Smart Home Assistant can:
+
+1. **Control smart home devices**:
+
+   - Turn on/off lights, AC, TV, etc.
+   - Set temperatures, channels, volumes
+   - Control blinds up/down
+
+2. **Provide live information**:
+   - Weather updates
+   - Latest news headlines
+   - Current time and date
+
+### Example Commands
+
+- "Turn on the living room lights"
+- "Set the bedroom AC to 22 degrees"
+- "What's the weather like?"
+- "Tell me the latest news"
+- "What time is it?"
+- "Turn on the TV in the living room"
+- "Close the blinds in the bedroom"
+  ```
+
+  ```
 
 ## Cross-platform usage
 
