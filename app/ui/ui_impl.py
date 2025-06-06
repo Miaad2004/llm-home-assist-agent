@@ -1,7 +1,7 @@
 from .base import SmartHomeUIManager
 from typing import Dict
 from app.agent.agent_impl import DeviceCommandAgentImpl
-from app.agent.llm_client_impl import GroqLLMClient
+from app.agent.llm_client_impl import GenericOpenAILLMClient
 from app.voice.base import VoiceAssistantInterface
 
 class SmartHomeUIManagerImpl(SmartHomeUIManager):
@@ -16,7 +16,7 @@ class SmartHomeUIManagerImpl(SmartHomeUIManager):
         Calls: None (constructor)
         """
         if agent is None:
-            llm_client = GroqLLMClient()
+            llm_client = GenericOpenAILLMClient()
             agent = DeviceCommandAgentImpl(llm_client)
         self.agent = agent
         self.voice = voice

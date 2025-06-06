@@ -21,6 +21,40 @@ A modular, voice-enabled smart home assistant with LLM-based command parsing, de
    python scripts/run_app.py
    ```
 
+## Cross-platform usage
+
+### Windows
+
+Run:
+
+```powershell
+./run_app.ps1
+```
+
+### Linux (bash)
+
+Run:
+
+```bash
+./run_app.sh
+```
+
+### Mac (zsh)
+
+Run:
+
+```zsh
+./run_app.zsh
+```
+
+> Ensure you have Python 3 and `venv` installed. The scripts will create a virtual environment and install dependencies automatically.
+
+If you encounter permission errors, you may need to run:
+
+```bash
+chmod +x run_app.sh run_app.zsh
+```
+
 ## Contributors
 
 - Person A: Agent/LLM
