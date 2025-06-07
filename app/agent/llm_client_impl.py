@@ -50,6 +50,12 @@ class GenericLLMClient(LLMClientInterface):
         else:
             self.history = [{"role": "system", "content": system_prompt}] + self.history
     
+    def clear_hist(self):
+        """
+        Clears the conversation history, preserving the system prompt if set.
+        """
+        self.history = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
+
     def send_prompt(self, prompt: str, tools: Optional[List[Dict[str, Any]]] = None) -> Any:
         """
         Sends a prompt to the LLM and returns the response.
@@ -105,8 +111,7 @@ class GenericLLMClient(LLMClientInterface):
                 # Fallback to string representation with basic coloring
                 print(f"{Fore.WHITE}{response}")
             print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-            
-            # Get the message content
+              # Get the message content
             message = response.choices[0].message
             
             # Check if the response includes tool calls
@@ -125,11 +130,55 @@ class GenericLLMClient(LLMClientInterface):
                         } for tc in message.tool_calls
                     ])
                 })
-                return message
-            else:
-                # Add assistant message to history
-                self.history.append({"role": "assistant", "content": message.content})
-                return message.content
+                return message            # Check if tool calls are embedded in the content as text (for some LLM providers)
+            elif message.content and "[tool_calls]:" in message.content:
+                try:
+                    # Extract the tool calls from the content
+                    import re
+                    import ast
+                    
+                    # Find the tool_calls part in the content
+                    tool_calls_match = re.search(r'\[tool_calls\]:\s*(\[.*\])', message.content, re.DOTALL)
+                    if tool_calls_match:
+                        tool_calls_str = tool_calls_match.group(1)
+                        
+                        # Try to parse as JSON first, then fallback to ast.literal_eval
+                        try:
+                            tool_calls_data = json.loads(tool_calls_str)
+                        except json.JSONDecodeError:
+                            tool_calls_data = ast.literal_eval(tool_calls_str)
+                        
+                        # Create a mock message object with tool calls
+                        class MockToolCall:
+                            def __init__(self, data):
+                                self.id = data['id']
+                                self.type = data['type']
+                                self.function = type('obj', (object,), {
+                                    'name': data['function']['name'],
+                                    'arguments': data['function']['arguments']
+                                })()
+                        
+                        class MockMessage:
+                            def __init__(self, content, tool_calls_data):
+                                self.content = content.split("[tool_calls]:")[0].strip() if "[tool_calls]:" in content else content
+                                self.tool_calls = [MockToolCall(tc) for tc in tool_calls_data]
+                        
+                        mock_message = MockMessage(message.content, tool_calls_data)
+                        
+                        # Add assistant message with tool calls to history
+                        self.history.append({
+                            "role": "assistant",
+                            "content": mock_message.content + "\n[tool_calls]: " + str(tool_calls_data)
+                        })
+                        return mock_message
+                    
+                except Exception as parse_error:
+                    print(f"{Fore.RED}❌ Error parsing tool calls from content: {parse_error}{Style.RESET_ALL}")
+                    # Fall through to treat as regular content
+            
+            # Add assistant message to history
+            self.history.append({"role": "assistant", "content": message.content})
+            return message.content
         
         except Exception as e:
             print(f"{Fore.RED}❌ LLM error: {e}{Style.RESET_ALL}")

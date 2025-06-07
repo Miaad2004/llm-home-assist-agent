@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 import requests
 from duckduckgo_search import DDGS
 
+device_controller = None
 
 class GenericTools:
     @staticmethod
@@ -186,6 +187,101 @@ class GenericTools:
                     'snippet': result['body']
                 })
             return str(output)
+    
+    @staticmethod
+    def get_devices() -> str:
+        """
+        Returns a list of all available smart home devices and their current status.
+        
+        Args:
+            None
+            
+        Returns:
+            str: JSON string containing all devices with their properties (id, name, type, location, status)
+        
+        Example call:
+        {
+            "Question": "What devices can I control?",
+            "Thought": "The user wants to know what smart devices are available. I must use the get_devices tool to provide this information.",
+            "tools_used": ["get_devices"],
+            "Answer": "You have several devices in your home that I can control: 
+                      1. A bedroom light (currently off)
+                      2. A living room lamp (currently on)
+                      3. Kitchen light (currently off)
+                      4. Bedroom AC (currently off)
+                      5. Living room TV (currently off)"
+        }
+        """
+        global device_controller
+        
+        if Settings.VERBOSE_LEVEL > 1:
+            print("GenericTools.get_devices called")
+        
+        if not device_controller:
+            return "Error: Device controller is not initialized"
+        
+        try:
+            # Get devices from controller
+            devices = device_controller.get_device_states()
+            
+            # Format for better readability
+            formatted_devices = []
+            
+            if isinstance(devices, dict):
+                # Convert dictionary to list
+                for device_id, device_data in devices.items():
+                    formatted_devices.append(device_data)
+            else:
+                # Already a list
+                formatted_devices = devices
+                
+            # Convert to JSON string
+            return json.dumps(formatted_devices, indent=2)
+        except Exception as e:
+            return f"Error retrieving devices: {str(e)}"
+    
+    @staticmethod
+    def control_device(device_id: str, action: str) -> str:
+        """
+        Controls a specific smart home device, turning it on or off.
+        
+        Args:
+            device_id (str): The ID of the device to control (e.g., "bedroom_light", "living_lamp")
+            action (str): The action to perform, must be either "on" or "off"
+            
+        Returns:
+            str: Result of the control operation
+        
+        Example call:
+        {
+            "Question": "Turn on the bedroom light",
+            "Thought": "The user wants to turn on the bedroom light. I need to use the control_device tool with the bedroom light ID.",
+            "tools_used": ["control_device"],
+            "Answer": "I've turned on the bedroom light for you."
+        }
+        """
+        global device_controller
+        
+        if Settings.VERBOSE_LEVEL > 1:
+            print(f"GenericTools.control_device called with device_id={device_id}, action={action}")
+        
+        if not device_controller:
+            return "Error: Device controller is not initialized"
+        
+        # Validate action
+        if action not in ["on", "off"]:
+            return "Error: Action must be 'on' or 'off'"
+        
+        try:
+            # Send command to device controller
+            result = device_controller.control_device({
+                "device_id": device_id,
+                "action": action
+            })
+            
+            return result
+        except Exception as e:
+            return f"Error controlling device: {str(e)}"
 
 
 

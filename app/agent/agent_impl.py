@@ -7,12 +7,22 @@ import ast
 
 
 class MyAgent(DeviceCommandAgent):
-    def __init__(self, llm_client: LLMClientInterface, tools: dict, base_sys_prompt_path: str = ""):
+    def __init__(self, llm_client: LLMClientInterface, tools: dict, base_sys_prompt_path: str = "", device_control=None):
         """
-        Initializes the agent with an LLM client and tools.
+        Initializes the agent with an LLM client, tools, and device controller.
         """
         self.tools = tools
         self.llm_client = llm_client
+        self.device_control = device_control
+
+        # Hook up device controller to generic_tools
+        if device_control is not None:
+            try:
+                import app.tools.generic_tools as generic_tools
+                generic_tools.device_controller = device_control
+                
+            except ImportError as e:
+                print(f"[ERROR] Could not import generic_tools to set device_controller: {e}")
         
         # Set a simpler system prompt - we don't need the complex tool instructions anymore
         system_prompt = "You are a helpful smart home assistant. You can control devices, check the weather, get news, and more."
@@ -69,12 +79,15 @@ class MyAgent(DeviceCommandAgent):
                 try:
                     # Parse the arguments
                     args = json.loads(tool_call.function.arguments)
+                    print(f"\n[TOOL CALL] {tool_name} called with parameters:")
+                    print(json.dumps(args, indent=2))
                     
                     # Execute the tool
                     if tool_name in self.tools:
                         tool_function = self.tools[tool_name]["function"]
                         result = tool_function(**args)
-                        
+                        print(f"[TOOL RESPONSE] {tool_name} returned:")
+                        print(json.dumps(result, indent=2) if not isinstance(result, str) else result)
                         # Add the tool result to the conversation
                         self.llm_client.history.append({
                             "role": "tool",
@@ -83,20 +96,22 @@ class MyAgent(DeviceCommandAgent):
                             "content": str(result)
                         })
                     else:
-                        # Tool not found
+                        error_msg = f"Error: Tool '{tool_name}' not found"
+                        print(f"[TOOL ERROR] {error_msg}")
                         self.llm_client.history.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
                             "name": tool_name,
-                            "content": f"Error: Tool '{tool_name}' not found"
+                            "content": error_msg
                         })
                 except Exception as e:
-                    # Error executing the tool
+                    error_msg = f"Error: {str(e)}"
+                    print(f"[TOOL ERROR] {error_msg}")
                     self.llm_client.history.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "name": tool_name,
-                        "content": f"Error: {str(e)}"
+                        "content": error_msg
                     })
             
             # Get the final response after tool execution

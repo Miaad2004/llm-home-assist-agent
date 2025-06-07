@@ -22,6 +22,7 @@ from app.tools.tools import TOOLS
 from app.voice.tts_impl import TTSImpl
 from app.voice.whisper_stt import WhisperSTT
 from config.settings import Settings
+from app.devices.hardware import ArduinoController
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -44,6 +45,7 @@ agent = None
 llm_client = None
 tts_service = None
 stt_service = None
+device_controller = None
 
 # Pydantic models for request/response
 class ChatRequest(BaseModel):
@@ -74,12 +76,40 @@ class STTResponse(BaseModel):
     transcription: str
     status: str = "success"
 
+# Device control models
+class Device(BaseModel):
+    id: str
+    name: str
+    description: str
+    type: str  # ac, lamp, tv, etc.
+    location: str
+    pin: int
+    status: str
+
+class DeviceList(BaseModel):
+    devices: List[Device]
+
+class DeviceControlRequest(BaseModel):
+    device_id: str
+    action: str  # "on" or "off"
+
+class DeviceResponse(BaseModel):
+    message: str
+    status: str = "success"
+
 # Initialize the agent and LLM client
 def initialize_agent():
-    global agent, llm_client, tts_service, stt_service
+    global agent, llm_client, tts_service, stt_service, device_controller
     try:
         # Initialize LLM client
         llm_client = GenericLLMClient()
+          # Initialize device controller
+        device_controller = ArduinoController()
+        
+        # Set the device controller for the tools
+        from app.tools.generic_tools import device_controller as tools_device_controller
+        tools_device_controller = device_controller
+        
         # Get all available tools
         tools = TOOLS
         
@@ -87,17 +117,18 @@ def initialize_agent():
         agent = MyAgent(
             llm_client=llm_client,
             tools=tools,
-            base_sys_prompt_path=Settings.SYSTEM_PROMPT_PATH or ""
+            base_sys_prompt_path=Settings.SYSTEM_PROMPT_PATH or "",
+            device_control=device_controller
         )
         
         # Initialize voice services
         tts_service = TTSImpl()
         stt_service = WhisperSTT()
         
-        print("✅ Agent and voice services initialized successfully")
+        print("✅ Agent, voice services, and device controller initialized successfully")
         return True
     except Exception as e:
-        print(f"❌ Failed to initialize agent and voice services: {e}")
+        print(f"❌ Failed to initialize services: {e}")
         return False
 
 # Startup event
@@ -388,6 +419,55 @@ async def voice_chat(audio_file: UploadFile = File(...)):
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in voice chat: {str(e)}")
+
+# Device control endpoints
+@app.get("/devices", response_model=DeviceList)
+async def get_devices():
+    """
+    Get a list of all available devices and their current status.
+    """
+    global device_controller
+    
+    if not device_controller:
+        raise HTTPException(status_code=503, detail="Device controller not initialized")
+    
+    try:
+        device_dict = device_controller.get_device_states()
+        # Convert dict to list of devices
+        devices = list(device_dict.values()) if isinstance(device_dict, dict) else device_dict
+        return DeviceList(devices=devices)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving devices: {str(e)}")
+
+@app.post("/devices/control", response_model=DeviceResponse)
+async def control_device(request: DeviceControlRequest):
+    """
+    Control a specific device by ID (turn it on or off).
+    """
+    global device_controller
+    
+    if not device_controller:
+        raise HTTPException(status_code=503, detail="Device controller not initialized")
+    
+    # Validate action
+    if request.action not in ["on", "off"]:
+        raise HTTPException(status_code=400, detail="Action must be 'on' or 'off'")
+    
+    try:
+        result = device_controller.control_device({
+            "device_id": request.device_id,
+            "action": request.action
+        })
+        
+        # If the result starts with "Error", treat it as an error
+        if result.startswith("Error"):
+            raise HTTPException(status_code=400, detail=result)
+            
+        return DeviceResponse(message=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error controlling device: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

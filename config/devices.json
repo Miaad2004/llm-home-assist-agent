@@ -3,46 +3,45 @@
     "id": "bedroom_light",
     "name": "Bedroom Light",
     "description": "Ceiling LED light in the bedroom.",
-    "actions": [
-      {
-        "name": "turn_on",
-        "description": "Turn the bedroom light on.",
-        "args": []
-      },
-      {
-        "name": "turn_off",
-        "description": "Turn the bedroom light off.",
-        "args": []
-      },
-      {
-        "name": "set_brightness",
-        "description": "Set the brightness level (0-100%).",
-        "args": [
-          {
-            "name": "level",
-            "description": "Brightness percentage (0-100).",
-            "example": 75
-          }
-        ]
-      }
-    ]
+    "type": "lamp",
+    "location": "bedroom",
+    "pin": 10,
+    "status": "on"
   },
   {
-    "id": "ir_led",
-    "name": "Infrared LED",
-    "description": "Infrared LED capable of sending arbitrary codes.",
-    "actions": [
-      {
-        "name": "send_code",
-        "description": "Send an arbitrary infrared code.",
-        "args": [
-          {
-            "name": "code",
-            "description": "The IR code to send (hex or protocol-specific).",
-            "example": "0x20DF10EF"
-          }
-        ]
-      }
-    ]
+    "id": "living_lamp",
+    "name": "Living Room Lamp",
+    "description": "Corner lamp in the living room.",
+    "type": "lamp",
+    "location": "living_room",
+    "pin": 6,
+    "status": "off"
+  },
+  {
+    "id": "kitchen_light",
+    "name": "Kitchen Light",
+    "description": "Main kitchen light.",
+    "type": "lamp",
+    "location": "kitchen",
+    "pin": 7,
+    "status": "off"
+  },
+  {
+    "id": "ac_bedroom",
+    "name": "Bedroom AC",
+    "description": "Air conditioner in bedroom.",
+    "type": "ac",
+    "location": "bedroom",
+    "pin": 8,
+    "status": "off"
+  },
+  {
+    "id": "tv_living",
+    "name": "Living Room TV",
+    "description": "Smart TV in living room.",
+    "type": "tv",
+    "location": "living_room",
+    "pin": 9,
+    "status": "off"
   }
 ]
