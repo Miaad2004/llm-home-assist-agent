@@ -310,7 +310,7 @@ async def text_to_speech(request: TTSRequest):
     
     try:
         # Generate audio file (returns filename only for security)
-        audio_filename = tts_service.synthesize_to_file(request.text, voice=request.voice)
+        audio_filename = tts_service.synthesize_to_file(request.text)
         
         # Return filename and metadata
         return {
@@ -318,12 +318,12 @@ async def text_to_speech(request: TTSRequest):
             "voice": request.voice,
             "audio_filename": audio_filename,
             "download_url": f"/files/download?filename={audio_filename}",
-            "status": "success"
-            # Remove this line: "note": "TTS implementation is pending - this is a mock response with placeholder file"
+            "status": "success",
+            "note": "TTS implementation is pending - this is a mock response with placeholder file"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error in TTS synthesis: {str(e)}") 
- 
+        raise HTTPException(status_code=500, detail=f"Error in TTS synthesis: {str(e)}")
+
 # Text-to-Speech endpoint that returns audio file
 @app.post("/tts/synthesize/file")
 async def text_to_speech_file(request: TTSRequest):
@@ -332,26 +332,20 @@ async def text_to_speech_file(request: TTSRequest):
         raise HTTPException(status_code=500, detail="TTS service not initialized")
     
     try:
-        # This returns just the filename, not full path
-        audio_filename = tts_service.synthesize_to_file(request.text, voice=request.voice)
+        from config.settings import Settings
+        
+        # Generate audio file (returns filename only)
+        audio_filename = tts_service.synthesize_to_file(request.text)
         
         # Construct full path from download folder and filename
         download_folder = Settings.DOWNLOAD_FOLDER_PATH
         audio_file_path = os.path.join(download_folder, audio_filename)
         
-        # Check if the file exists (common cause of "Failed to fetch" errors)
-        if not os.path.exists(audio_file_path):
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Generated audio file not found: {audio_filename}"
-            )
-            
         # Return the file for download
         return FileResponse(
-            path=audio_file_path,  # Give full path to FileResponse
+            path=audio_file_path,
             media_type='audio/wav',
-            filename=audio_filename,  # Client will see just the filename
-            headers={"Content-Disposition": f"attachment; filename={audio_filename}"}  # Add this line
+            filename=audio_filename
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in TTS synthesis: {str(e)}")

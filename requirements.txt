@@ -13,3 +13,8 @@ typing-extensions
 lxml
 gradio-client
 coqui-tts
+sounddevice
+numpy
+scipy
+openai-whisper
+imageio-ffmpeg
