@@ -34,6 +34,7 @@ class WhisperSTT:
                 
         # except Exception as e:
         #     print(f"{Fore.RED}[STT] Warning: Could not clear model directory: {str(e)}{Style.RESET_ALL}")
+        pass
     
     def _load_model(self):
         """Load the Whisper model if not already loaded"""
