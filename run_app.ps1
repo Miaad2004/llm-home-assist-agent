@@ -4,6 +4,9 @@ param(
     [switch]$ForceInstall
 )
 
+# Change to script directory to ensure correct .env loading
+Set-Location $PSScriptRoot
+
 $venvPath = "$PSScriptRoot\agent_venv"
 $venvPython = "$venvPath\Scripts\python.exe"
 

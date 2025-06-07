@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Assistant - Voice Interface</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-top: 0;
+        }
+
+        input,
+        textarea,
+        button,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .response {
+            margin-top: 15px;
+            padding: 15px;
+            background: #edf2f7;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            min-height: 40px;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .file-input {
+            padding: 8px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .recording {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .ready {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🏠 Smart Home Assistant - Voice Interface</h1>
+
+        <!-- Health Check -->
+        <div class="section">
+            <h2>🏥 System Health</h2>
+            <button onclick="checkHealth()">Check System Health</button>
+            <div id="healthResponse" class="response"></div>
+        </div>
+
+        <!-- Text-to-Speech -->
+        <div class="section">
+            <h2>🗣️ Text-to-Speech</h2>
+            <textarea id="ttsText" placeholder="Enter text to synthesize..."
+                rows="3">Hello! Welcome to the Smart Home Assistant. This is a test of the text-to-speech functionality.</textarea>
+            <select id="voiceSelect">
+                <option value="default">Default Voice</option>
+                <option value="male">Male Voice</option>
+                <option value="female">Female Voice</option>
+            </select>
+            <button onclick="synthesizeText()">Synthesize Speech</button>
+            <button onclick="synthesizeToFile()">Synthesize to File</button>
+            <div id="ttsResponse" class="response"></div>
+        </div>
+
+        <!-- Speech-to-Text -->
+        <div class="section">
+            <h2>🎤 Speech-to-Text</h2>
+            <input type="file" id="audioFile" accept="audio/*" class="file-input">
+            <button onclick="transcribeAudio()">Transcribe Audio File</button>
+            <button onclick="startLiveTranscription()">Start Live Transcription</button>
+            <div id="sttResponse" class="response"></div>
+        </div>
+
+        <!-- Voice Chat -->
+        <div class="section">
+            <h2>💬 Voice Chat</h2>
+            <input type="file" id="voiceChatFile" accept="audio/*" class="file-input">
+            <button onclick="voiceChat()">Start Voice Chat</button>
+            <div id="voiceChatResponse" class="response"></div>
+        </div>
+
+        <!-- Available Tools -->
+        <div class="section">
+            <h2>🔧 Available Tools</h2>
+            <button onclick="getTools()">Get Available Tools</button>
+            <div id="toolsResponse" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('healthResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('healthResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('healthResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('healthResponse').className = 'response error';
+            }
+        }
+
+        async function synthesizeText() {
+            const text = document.getElementById('ttsText').value;
+            const voice = document.getElementById('voiceSelect').value;
+
+            if (!text.trim()) {
+                alert('Please enter some text to synthesize');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/tts/synthesize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text, voice })
+                });
+
+                const data = await response.json();
+                document.getElementById('ttsResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('ttsResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('ttsResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('ttsResponse').className = 'response error';
+            }
+        }
+
+        async function synthesizeToFile() {
+            const text = document.getElementById('ttsText').value;
+            const voice = document.getElementById('voiceSelect').value;
+
+            if (!text.trim()) {
+                alert('Please enter some text to synthesize');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/tts/synthesize/file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text, voice })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'tts_output.wav';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    document.getElementById('ttsResponse').innerHTML = 'File downloaded successfully!';
+                    document.getElementById('ttsResponse').className = 'response success';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                document.getElementById('ttsResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('ttsResponse').className = 'response error';
+            }
+        }
+
+        async function transcribeAudio() {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an audio file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('audio_file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/stt/transcribe`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById('sttResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('sttResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('sttResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('sttResponse').className = 'response error';
+            }
+        }
+
+        async function startLiveTranscription() {
+            try {
+                const response = await fetch(`${API_BASE}/stt/live`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                document.getElementById('sttResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('sttResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('sttResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('sttResponse').className = 'response error';
+            }
+        }
+
+        async function voiceChat() {
+            const fileInput = document.getElementById('voiceChatFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an audio file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('audio_file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/voice/chat`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById('voiceChatResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('voiceChatResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('voiceChatResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('voiceChatResponse').className = 'response error';
+            }
+        }
+
+        async function getTools() {
+            try {
+                const response = await fetch(`${API_BASE}/tools`);
+                const data = await response.json();
+                document.getElementById('toolsResponse').innerHTML = JSON.stringify(data, null, 2);
+                document.getElementById('toolsResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('toolsResponse').innerHTML = `Error: ${error.message}`;
+                document.getElementById('toolsResponse').className = 'response error';
+            }
+        }
+
+        // Auto-check health on page load
+        window.onload = function () {
+            checkHealth();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Assistant Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 70%;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .assistant-message {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .send-button:hover {
+            background: #0056b3;
+        }
+
+        .send-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .tools-toggle {
+            margin-bottom: 10px;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🏠 Smart Home Assistant</h1>
+        <p>Chat with your AI assistant</p>
+    </div>
+
+    <div class="tools-toggle">
+        <label class="toggle-label">
+            <input type="checkbox" id="useTools" checked>
+            Use smart tools (weather, news, web search, etc.)
+        </label>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="message assistant-message">
+            <strong>Assistant:</strong> Hello! I'm your smart home assistant. I can help you with weather, news, time,
+            web searches, and more. How can I assist you today?
+        </div>
+    </div>
+
+    <div class="status" id="status">Ready</div>
+
+    <div class="input-container">
+        <input type="text" id="messageInput" class="message-input" placeholder="Type your message..."
+            onkeypress="handleKeyPress(event)">
+        <button id="sendButton" class="send-button" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const status = document.getElementById('status');
+        const useToolsCheckbox = document.getElementById('useTools');
+
+        // Check API health on load
+        window.onload = async function () {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                if (health.status === 'healthy') {
+                    status.textContent = 'Connected to API ✅';
+                    status.style.color = 'green';
+                } else {
+                    status.textContent = 'API not ready ❌';
+                    status.style.color = 'red';
+                }
+            } catch (error) {
+                status.textContent = 'Cannot connect to API ❌';
+                status.style.color = 'red';
+            }
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+            sendButton.disabled = true;
+            status.textContent = 'Thinking...';
+
+            try {
+                const useTools = useToolsCheckbox.checked;
+                const endpoint = useTools ? '/chat' : '/llm/direct';
+
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        use_tools: useTools
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    addMessage(data.response, 'assistant');
+                    status.textContent = 'Ready';
+                } else {
+                    addMessage(`Error: ${data.response}`, 'assistant');
+                    status.textContent = 'Error occurred';
+                    status.style.color = 'red';
+                }
+            } catch (error) {
+                addMessage(`Connection error: ${error.message}`, 'assistant');
+                status.textContent = 'Connection error';
+                status.style.color = 'red';
+            } finally {
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        function addMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+
+            if (sender === 'user') {
+                messageDiv.innerHTML = `<strong>You:</strong> ${content}`;
+            } else {
+                messageDiv.innerHTML = `<strong>Assistant:</strong> ${content}`;
+            }
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Clear chat function (can be called from console)
+        function clearChat() {
+            chatContainer.innerHTML = '<div class="message assistant-message"><strong>Assistant:</strong> Chat cleared. How can I help you?</div>';
+        }
+
+        // Clear server history function
+        async function clearServerHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/llm/clear-history`, {
+                    method: 'POST',
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    status.textContent = 'Server history cleared ✅';
+                    status.style.color = 'green';
+                    setTimeout(() => {
+                        status.textContent = 'Ready';
+                        status.style.color = '#666';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

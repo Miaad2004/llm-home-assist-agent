@@ -6,3 +6,8 @@ beautifulsoup4
 pyserial
 colorama
 pydantic
+fastapi
+uvicorn[standard]
+python-multipart
+typing-extensions
+lxml
