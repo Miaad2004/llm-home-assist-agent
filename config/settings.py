@@ -18,7 +18,7 @@ class Settings:
     ARDUINO_BAUDRATE = os.getenv("ARDUINO_BAUDRATE", "9600")
     DEVICES_CONFIG_PATH = os.getenv("DEVICES_CONFIG_PATH", os.path.join(os.path.dirname(__file__), '..', 'config', 'devices.json'))
     DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH", os.path.join(os.path.dirname(__file__), '..', 'downloads'))
-    WHISPER_MODEL_PATH = os.getenv("WHISPER_MODEL_PATH", os.path.join(os.path.dirname(__file__), '..', 'models', 'whisper', 'base.pt'))
+    WHISPER_MODEL_PATH = os.getenv("WHISPER_MODEL_PATH", os.path.join(os.path.dirname(__file__), '..', 'app', 'voice', 'base.pt'))
     HF_TOKEN = os.getenv("HF_TOKEN")
     TTS_MODEL = os.getenv("TTS_MODEL", "XTTS")  # Default to XTTS if not set
     XTTS_PATH = os.getenv("XTTS_PATH")
