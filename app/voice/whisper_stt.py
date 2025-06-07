@@ -6,6 +6,10 @@ import numpy as np
 import tempfile
 #import scipy.io.wavfile
 from config.settings import Settings
+from colorama import Fore, Style, init
+
+# Initialize colorama for Windows compatibility
+init(autoreset=True)
 
 # Assigned to: Person B (Voice pipeline)
 class WhisperSTT:
@@ -21,21 +25,21 @@ class WhisperSTT:
     def _load_model(self):
         """Load the Whisper model if not already loaded"""
         if self.model is None:
-            print(f"[STT] Loading Whisper {self.model_size} model...")
+            print(f"{Fore.CYAN}[STT] Loading Whisper {self.model_size} model...{Style.RESET_ALL}")
             
             # Use the local model file if it's the base model
             if self.model_size == "base":
                 local_model_path = Settings.WHISPER_MODEL_PATH
                 if os.path.exists(local_model_path):
-                    print(f"[STT] Using local model file: {local_model_path}")
+                    print(f"{Fore.GREEN}[STT] Using local model file: {local_model_path}{Style.RESET_ALL}")
                     self.model = whisper.load_model(local_model_path)
                 else:
-                    print(f"[STT] Local model file not found, downloading model...")
+                    print(f"{Fore.YELLOW}[STT] Local model file not found, downloading model...{Style.RESET_ALL}")
                     self.model = whisper.load_model(self.model_size)
             else:
                 self.model = whisper.load_model(self.model_size)
                 
-            print("[STT] Model loaded successfully")
+            print(f"{Fore.GREEN}[STT] Model loaded successfully{Style.RESET_ALL}")
         return self.model
 
     def transcribe(self, audio_path: str) -> str:
@@ -49,10 +53,10 @@ class WhisperSTT:
                 return "[STT Error] Audio file not found"
             
             model = self._load_model()
-            print(f"[STT] Transcribing file: {audio_path}")
+            print(f"{Fore.CYAN}[STT] Transcribing file: {audio_path}{Style.RESET_ALL}")
             result = model.transcribe(audio_path)
-            print(result["text"])
-            print("[STT] Transcription complete")
+            print(f"{Fore.MAGENTA}{result['text']}{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}[STT] Transcription complete{Style.RESET_ALL}")
             return result["text"]
         except Exception as e:
             return f"[STT Error] {str(e)}"
@@ -65,8 +69,8 @@ class WhisperSTT:
             Transcribed text from live audio
         """
         try:
-            print("[STT] Starting live transcription...")
-            print("[STT] Recording... Speak now.")
+            print(f"{Fore.CYAN}[STT] Starting live transcription...{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}[STT] Recording... Speak now.{Style.RESET_ALL}")
             
             # Set up recording parameters
             chunk_duration = 2  # seconds
@@ -101,7 +105,7 @@ class WhisperSTT:
                 scipy.io.wavfile.write(temp_file, samplerate, audio)
                 
                 # Transcribe the audio
-                print("[STT] Recording complete, transcribing...")
+                print(f"{Fore.CYAN}[STT] Recording complete, transcribing...{Style.RESET_ALL}")
                 model = self._load_model()
                 result = model.transcribe(temp_file)
                 
