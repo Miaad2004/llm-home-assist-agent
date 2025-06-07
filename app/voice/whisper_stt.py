@@ -31,16 +31,16 @@ class WhisperSTT:
             # Use the local model file if it's the base model
             if self.model_size == "base":
                 local_model_path = Settings.WHISPER_MODEL_PATH
+                local_model_dir = os.path.dirname(local_model_path)
+                
                 if os.path.exists(local_model_path):
                     print(f"{Fore.GREEN}[STT] Using local model file: {local_model_path}{Style.RESET_ALL}")
                     self.model = whisper.load_model(local_model_path)
                 else:
                     print(f"{Fore.YELLOW}[STT] Local model file not found, downloading model...{Style.RESET_ALL}")
-                    self.model = whisper.load_model(self.model_size)
-                    os.makedirs(os.path.dirname(local_model_path), exist_ok=True)
-                    print(f"{Fore.YELLOW}[STT] Saving model to {local_model_path}...{Style.RESET_ALL}")
-                    whisper.save_model(self.model, local_model_path)
-
+                    os.makedirs(local_model_dir, exist_ok=True)
+                    self.model = whisper.load_model(self.model_size, download_root=local_model_dir)
+                    print(f"{Fore.GREEN}[STT] Model downloaded and saved to {local_model_dir}{Style.RESET_ALL}")
             else:
                 self.model = whisper.load_model(self.model_size)
                 
