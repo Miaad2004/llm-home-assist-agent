@@ -4,9 +4,15 @@ import os
 import re
 from gradio_client import Client, handle_file
 import shutil
-import uuid
 from config.settings import Settings
-class TTSImpl:
+from .base import VoiceAssistantInterface
+from colorama import init, Fore, Style
+
+# Initialize colorama for Windows compatibility
+init(autoreset=True)
+
+
+class DAYA_TTS(VoiceAssistantInterface):
     """
     Handles text-to-speech synthesis using Dia model.
     """
@@ -15,14 +21,8 @@ class TTSImpl:
         self.hf_token = Settings.HF_TOKEN
         self.client = None
         self.audio_prompt = 'https://github.com/gradio-app/gradio/raw/main/test/test_files/audio_sample.wav'
-    def speak(self, message: str) -> None:
-        """
-        Input: str — Text message
-        Output: None
-        Calls: TTS engine (Coqui, Piper, etc.)
-        """
-        # TODO: Implement actual TTS synthesis
-        print(f"[TTS] Speaking: {message}")
+        
+
     def synthesize_to_file(self, text: str, output_path: str = None, voice: str = "female") -> str:
         """
         Synthesize text to an audio file.
@@ -53,18 +53,18 @@ class TTSImpl:
             
             # Format text for Dia model
             formatted_text = self._format_text_for_dia(text, voice)
-            print(f"[TTS] Formatted text: {formatted_text}")
+            print(f"{Fore.BLUE}[TTS] Formatted text: {formatted_text}{Style.RESET_ALL}")
                 
             # Generate speech with Dia
             full_path = self._generate_with_dia(formatted_text, output_path)
             
-            print(f"[TTS] Synthesized to file: {output_path}")
+            print(f"{Fore.GREEN}[TTS] Synthesized to file: {output_path}{Style.RESET_ALL}")
             
             # Return only the filename for security when using download folder
             return filename
                 
         except Exception as e:
-            print(f"[TTS Error] Synthesis failed: {e}")
+            print(f"{Fore.RED}[TTS Error] Synthesis failed: {e}{Style.RESET_ALL}")
             # Create placeholder file as fallback
             with open(output_path, 'w') as f:
                 f.write(f"# Audio file placeholder for: {text}")
@@ -75,7 +75,7 @@ class TTSImpl:
         try:
             self._initialize_client()
             
-            print("🎙️ Generating speech with Dia...")
+            print(f"{Fore.YELLOW}Generating speech with Dia...{Style.RESET_ALL}")
             
             result = self.client.predict(
                 text_input=formatted_text,
@@ -98,61 +98,14 @@ class TTSImpl:
             os.makedirs(output_dir, exist_ok=True)
             
             shutil.copy2(result, output_path)
-            print(f"✅ Audio generated successfully: {output_path}")
+            print(f"{Fore.GREEN}Audio generated successfully: {output_path}{Style.RESET_ALL}")
             
-            print(f"[TTS] Synthesized to file: {output_path}")
+            print(f"{Fore.GREEN}[TTS] Synthesized to file: {output_path}{Style.RESET_ALL}")
             
             return output_path
         except Exception as e:
-            print(f"❌ TTS Generation failed: {str(e)}")
+            print(f"{Fore.RED}TTS Generation failed: {str(e)}{Style.RESET_ALL}")
             raise  # Re-raise the exception to be caught by the caller
-
-    def speak(self, message: str, voice: str = "female") -> None:
-        """
-        Synthesize and play text using Dia TTS.
-        
-        Args:
-            message: Text message to speak
-            voice: "male", "female", or "auto"
-        """
-        try:
-            # Generate audio file
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-            temp_path = temp_file.name
-            temp_file.close()
-            
-            audio_path = self.synthesize_to_file(message, temp_path, voice)
-            
-            # Play the audio
-            self._play_audio(audio_path)
-            
-            # Clean up temp file
-            try:
-                os.unlink(audio_path)
-            except:
-                pass
-                
-        except Exception as e:
-            print(f"[TTS Error] Could not synthesize speech: {e}")
-            # Fallback to text output
-            print(f"[TTS Fallback] Speaking: {message}")
-    
-
-    def _play_audio(self, file_path: str):
-        """Play audio file using system default player"""
-        try:
-            import sys
-            import subprocess
-            
-            if sys.platform.startswith('win'):
-                os.startfile(file_path)
-            elif sys.platform.startswith('darwin'):
-                subprocess.call(['open', file_path])
-            else:
-                subprocess.call(['xdg-open', file_path])
-            print("🔊 Playing audio...")
-        except Exception as e:
-            print(f"❌ Could not play audio: {e}")
 
     def _format_text_for_dia(self, text: str, voice: str = "female") -> str:
         """
@@ -193,5 +146,5 @@ class TTSImpl:
     def _initialize_client(self):
         """Lazy initialization of the Dia client"""
         if self.client is None:
-            print("🔄 Connecting to Dia-1.6B model...")
+            print(f"{Fore.YELLOW}Connecting to Dia-1.6B model...{Style.RESET_ALL}")
             self.client = Client("nari-labs/Dia-1.6B", hf_token=self.hf_token)

@@ -9,11 +9,48 @@ param(
     [switch]$ForceInstall
 )
 
+# Clear terminal for clean start
+Clear-Host
+
 # Change to script directory to ensure correct .env loading
 Set-Location $PSScriptRoot
 
 $venvPath = "$PSScriptRoot\agent_venv"
 $venvPython = "$venvPath\Scripts\python.exe"
+
+# Check for required XTTS model files
+$xttsPath = "$PSScriptRoot\app\voice\TTS\XTTS"
+$requiredFiles = @(
+    "dvae.pth",
+    "mel_stats.pth", 
+    "model.pth",
+    "speakers_xtts.pth"
+)
+
+Write-Host "Checking for required XTTS model files..." -ForegroundColor Yellow
+$missingFiles = @()
+
+foreach ($file in $requiredFiles) {
+    $filePath = Join-Path $xttsPath $file
+    if (-Not (Test-Path $filePath)) {
+        $missingFiles += $file
+    }
+}
+
+if ($missingFiles.Count -gt 0) {
+    Write-Host "Error: Missing required XTTS model files:" -ForegroundColor Red
+    foreach ($file in $missingFiles) {
+        Write-Host "  - $file" -ForegroundColor Red
+    }
+    Write-Host ""
+    Write-Host "Please download the files from:" -ForegroundColor Yellow
+    Write-Host "https://huggingface.co/coqui/XTTS-v2/tree/main" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Download the missing .pth files to: $xttsPath" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host "All required XTTS model files found." -ForegroundColor Green
 
 Write-Host "Starting Smart Home Assistant API server..." -ForegroundColor Green
 

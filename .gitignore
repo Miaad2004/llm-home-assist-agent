@@ -70,3 +70,4 @@ Thumbs.db
 .exe
 
 smart-home-assistant/agent_venv/
+*.pth

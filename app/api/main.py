@@ -19,7 +19,8 @@ sys.path.insert(0, project_root)
 from app.agent.llm_client_impl import GenericLLMClient
 from app.agent.agent_impl import MyAgent
 from app.tools.tools import TOOLS
-from app.voice.tts_impl import TTSImpl
+from app.voice.TTS.tts_impl_daya import DAYA_TTS
+from app.voice.TTS.tts_impl_xtts import XTTS_TTS
 from app.voice.whisper_stt import WhisperSTT
 from config.settings import Settings
 from app.devices.hardware import ArduinoController
@@ -122,7 +123,15 @@ def initialize_agent():
         )
         
         # Initialize voice services
-        tts_service = TTSImpl()
+        if Settings.TTS_MODEL == "XTTS":
+            tts_service = XTTS_TTS()
+        
+        elif Settings.TTS_MODEL == "Daya":
+            tts_service = DAYA_TTS()
+        
+        else:
+            raise ValueError(f"Unsupported TTS model: {Settings.TTS_MODEL}")
+        
         stt_service = WhisperSTT()
         
         print("✅ Agent, voice services, and device controller initialized successfully")

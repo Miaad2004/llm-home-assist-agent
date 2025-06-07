@@ -7,12 +7,20 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # List available 🐸TTS models
 print(TTS().list_models())
 
-# Init TTS
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+# Initialize TTS
+tts = TTS(model_path="D:\\Uni\\Term_6\\DM\\Agent\\smart-home-assistant\\tts_model", config_path="D:\\Uni\\Term_6\\DM\\Agent\\smart-home-assistant\\tts_model\\config.json").to(device)
+
+# List speakers
+print(tts.speakers)
 
 # Run TTS
-# ❗ Since this model is multi-lingual voice cloning model, we must set the target speaker_wav and language
-# Text to speech list of amplitude values as output
-wav = tts.tts(text="Hello world!", speaker_wav="my/cloning/audio.wav", language="en")
-# Text to speech to a file
-tts.tts_to_file(text="Hello world!", speaker_wav="my/cloning/audio.wav", language="en", file_path="output.wav")
+# ❗ XTTS supports both, but many models allow only one of the `speaker` and
+# `speaker_wav` arguments
+
+# TTS to a file, use a preset speaker
+tts.tts_to_file(
+  text="ahhhhhhh I know Mohammad Hossein. Wow! amazing! try it on github",
+  speaker="Gracie Wise",
+  language="en",
+  file_path="output2.wav"
+)

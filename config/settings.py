@@ -19,3 +19,9 @@ class Settings:
     DEVICES_CONFIG_PATH = os.getenv("DEVICES_CONFIG_PATH", os.path.join(os.path.dirname(__file__), '..', 'config', 'devices.json'))
     DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH", os.path.join(os.path.dirname(__file__), '..', 'downloads'))
     HF_TOKEN = os.getenv("HF_TOKEN")
+    TTS_MODEL = os.getenv("TTS_MODEL", "XTTS")  # Default to XTTS if not set
+    XTTS_PATH = os.getenv("XTTS_PATH")
+    XTTS_MALE_VOICE = os.getenv("XTTS_MALE_VOICE", "Viktor Eka")  # Default voice for XTTS
+    XTTS_FEMALE_VOICE = os.getenv("XTTS_FEMALE_VOICE", "Lidiya Szekeres")  # Default voice for XTTS
+    LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))  # Default temperature for LLM
+    

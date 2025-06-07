@@ -12,7 +12,7 @@ class GenericLLMClient(LLMClientInterface):
     """
     A client for interacting with OpenAI's LLMs.
     """
-    def __init__(self, api_key: str="", model: str="", api_base: str = ""):
+    def __init__(self, api_key: str="", model: str="", api_base: str = "", temperature: float = None):
         """
         Initializes the client.
         
@@ -20,7 +20,11 @@ class GenericLLMClient(LLMClientInterface):
             api_key (str): API key for the LLM provider.
             model (str): Model name (e.g., "llama-3.1-8b-instant").
             api_base (str): Optional custom API endpoint.
+            temperature (float): Controls randomness in the model's output (0.0-2.0).
         """
+        if not temperature:
+            self.temperature = getattr(Settings, 'LLM_TEMPERATURE', 0.7)  # Default to 0.7 if not provided
+        
         self.api_key = api_key or Settings.LLM_API_KEY
         if not self.api_key:
             raise ValueError("API key must be provided.")
@@ -30,6 +34,7 @@ class GenericLLMClient(LLMClientInterface):
             raise ValueError("Model name must be provided.")
         
         self.api_base = api_base or Settings.LLM_API_ENDPOINT or None
+        self.temperature = temperature if temperature is not None else getattr(Settings, 'LLM_TEMPERATURE', 0.7)
         self.system_prompt = ""
         self.history = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
         
@@ -78,7 +83,8 @@ class GenericLLMClient(LLMClientInterface):
             # Create request parameters
             request_params = {
                 "model": self.model,
-                "messages": self.history
+                "messages": self.history,
+                "temperature": self.temperature
             }
             
             # Add tools if provided
