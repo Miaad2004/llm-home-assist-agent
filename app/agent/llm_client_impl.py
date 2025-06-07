@@ -49,20 +49,22 @@ class GenericLLMClient(LLMClientInterface):
             self.history[0]["content"] = system_prompt
         else:
             self.history = [{"role": "system", "content": system_prompt}] + self.history
-    
+            
     def clear_hist(self):
         """
         Clears the conversation history, preserving the system prompt if set.
         """
         self.history = [{"role": "system", "content": self.system_prompt}] if self.system_prompt else []
 
-    def send_prompt(self, prompt: str, tools: Optional[List[Dict[str, Any]]] = None) -> Any:
+    def send_prompt(self, prompt, tools: Optional[List[Dict[str, Any]]] = None, tool_choice: Optional[str] = None) -> Any:
         """
         Sends a prompt to the LLM and returns the response.
         
         Args:
             prompt (str): The user input prompt.
             tools (List[Dict[str, Any]], optional): List of tool definitions.
+            tool_choice (str, optional): Control whether the model can use tools. 
+                                         Options: "auto", "required", "none".
         
         Returns:
             Any: The LLM's response, either as a string or a message object with tool calls.
@@ -80,9 +82,34 @@ class GenericLLMClient(LLMClientInterface):
             # Add tools if provided
             if tools:
                 request_params["tools"] = tools
-                request_params["tool_choice"] = "auto"
-            
+                # Set tool_choice based on parameter, default to "auto" if not specified
+                request_params["tool_choice"] = tool_choice if tool_choice else "auto"
+
+            # Print the request parameters before sending
+            print(f"{Fore.GREEN}{'=' * 60}")
+            print(f"{Fore.BLUE}{Style.BRIGHT}📤 LLM REQUEST")
+            print(f"{Fore.GREEN}{'=' * 60}")
+            try:
+                req_json_str = json.dumps(request_params, indent=2, ensure_ascii=False, default=str)
+                import re
+                # Highlight all dictionary keys in magenta
+                req_json_str = re.sub(r'"([^"]+)":', f'{Fore.MAGENTA}"\\1"{Fore.WHITE}:', req_json_str)
+                # Highlight string values in green
+                req_json_str = re.sub(r'": "([^"]*)"', f'": {Fore.GREEN}"\\1"{Style.RESET_ALL}', req_json_str)
+                # Highlight numbers in yellow
+                req_json_str = re.sub(r'": (\d+)', f'": {Fore.YELLOW}\\1{Style.RESET_ALL}', req_json_str)
+                # Highlight booleans in blue
+                req_json_str = re.sub(r'": (true|false|null)', f'": {Fore.BLUE}\\1{Style.RESET_ALL}', req_json_str)
+                print(f"{Fore.WHITE}{req_json_str}")
+                
+            except Exception as req_err:
+                print(f"{Fore.WHITE}{request_params}")
+                
+            print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+
             response = openai.chat.completions.create(**request_params)
+    
+            
             
             # Prettify the LLM response output with colors
             print(f"{Fore.CYAN}{'=' * 60}")
@@ -107,6 +134,7 @@ class GenericLLMClient(LLMClientInterface):
                 json_str = re.sub(r'": (true|false|null)', f'": {Fore.BLUE}\\1{Style.RESET_ALL}', json_str)
                 
                 print(f"{Fore.WHITE}{json_str}")
+                
             except Exception as color_error:
                 # Fallback to string representation with basic coloring
                 print(f"{Fore.WHITE}{response}")
@@ -131,6 +159,7 @@ class GenericLLMClient(LLMClientInterface):
                     ])
                 })
                 return message            # Check if tool calls are embedded in the content as text (for some LLM providers)
+            
             elif message.content and "[tool_calls]:" in message.content:
                 try:
                     # Extract the tool calls from the content
