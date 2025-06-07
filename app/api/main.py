@@ -126,7 +126,7 @@ def initialize_agent():
         if Settings.TTS_MODEL == "XTTS":
             tts_service = XTTS_TTS()
         
-        elif Settings.TTS_MODEL == "Daya":
+        elif Settings.TTS_MODEL == "DAYA":
             tts_service = DAYA_TTS()
         
         else:
