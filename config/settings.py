@@ -18,3 +18,4 @@ class Settings:
     ARDUINO_BAUDRATE = os.getenv("ARDUINO_BAUDRATE", "9600")
     DEVICES_CONFIG_PATH = os.getenv("DEVICES_CONFIG_PATH", os.path.join(os.path.dirname(__file__), '..', 'config', 'devices.json'))
     DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH", os.path.join(os.path.dirname(__file__), '..', 'downloads'))
+    HF_TOKEN = os.getenv("HF_TOKEN")

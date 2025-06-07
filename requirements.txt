@@ -11,3 +11,4 @@ uvicorn[standard]
 python-multipart
 typing-extensions
 lxml
+gradio-client
