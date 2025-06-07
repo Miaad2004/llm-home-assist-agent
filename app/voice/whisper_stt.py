@@ -36,8 +36,13 @@ class WhisperSTT:
                 else:
                     print(f"{Fore.YELLOW}[STT] Local model file not found, downloading model...{Style.RESET_ALL}")
                     self.model = whisper.load_model(self.model_size)
+                    os.makedirs(os.path.dirname(local_model_path), exist_ok=True)
+                    print(f"{Fore.YELLOW}[STT] Saving model to {local_model_path}...{Style.RESET_ALL}")
+                    whisper.save_model(self.model, local_model_path)
+
             else:
                 self.model = whisper.load_model(self.model_size)
+                
                 
             print(f"{Fore.GREEN}[STT] Model loaded successfully{Style.RESET_ALL}")
         return self.model
