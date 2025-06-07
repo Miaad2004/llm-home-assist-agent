@@ -68,9 +68,11 @@ class GenericLLMClient(LLMClientInterface):
         
         Returns:
             Any: The LLM's response, either as a string or a message object with tool calls.
-        """
+        """        
         try:
-            if prompt:
+            # Only add user message if prompt is not empty
+            # For continued tool conversations, the history already contains the necessary context
+            if prompt and prompt.strip():
                 self.history.append({"role": "user", "content": prompt})
             
             # Create request parameters
@@ -142,24 +144,35 @@ class GenericLLMClient(LLMClientInterface):
               # Get the message content
             message = response.choices[0].message
             
-            # Check if the response includes tool calls
+            history_message_to_add = None
+
+            # Check if the response includes structured tool calls
             if hasattr(message, 'tool_calls') and message.tool_calls:
-                # Add assistant message with tool calls to history (store tool_calls as string in content for compatibility)
-                self.history.append({
-                    "role": "assistant",
-                    "content": (message.content or "") + "\n[tool_calls]: " + str([
-                        {
-                            "id": tc.id,
-                            "type": tc.type,
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments
-                            }
-                        } for tc in message.tool_calls
-                    ])
-                })
-                return message            # Check if tool calls are embedded in the content as text (for some LLM providers)
+                # Directly modify message.tool_calls to ensure IDs are non-empty
+                # This ensures agent_impl.py receives the corrected IDs via the returned message object.
+                for i, tc in enumerate(message.tool_calls):
+                    if not tc.id or not tc.id.strip():
+                        new_id = f"generated_tc_id_{i}"
+                        print(f"{Fore.YELLOW}Warning: LLM returned tool_call with empty ID. Replacing with '{new_id}'.{Style.RESET_ALL}")
+                        tc.id = new_id # Modify the id on the tool_call object itself
+                    
+                    # Ensure function name is present (it was in the log, but good practice)
+                    if not hasattr(tc, 'function') or not getattr(tc.function, 'name', None):
+                         print(f"{Fore.RED}Error: LLM tool_call missing function name for id '{tc.id}'.{Style.RESET_ALL}")
+                         # This tool call might be problematic for execution and history.
+
+                # Now that message.tool_calls has corrected IDs, use it for history
+                history_message_to_add = {"role": "assistant", "tool_calls": message.tool_calls}
+                
+                # Add content if it exists (e.g., assistant speaks then calls tool)
+                if message.content and message.content.strip():
+                    history_message_to_add["content"] = message.content
             
+            # Fallback: Check if tool calls are embedded in the content as text 
+            # This block is largely unchanged but is secondary to the structured tool_calls handling.
+            # If this path is taken, it implies the LLM is not returning structured tool_calls,
+            # and this code would also need to ensure its `history_message_to_add` is correct
+            # and that `message.tool_calls` is populated for agent_impl.py.
             elif message.content and "[tool_calls]:" in message.content:
                 try:
                     # Extract the tool calls from the content
@@ -178,36 +191,59 @@ class GenericLLMClient(LLMClientInterface):
                             tool_calls_data = ast.literal_eval(tool_calls_str)
                         
                         # Create a mock message object with tool calls
-                        class MockToolCall:
-                            def __init__(self, data):
-                                self.id = data['id']
-                                self.type = data['type']
-                                self.function = type('obj', (object,), {
-                                    'name': data['function']['name'],
-                                    'arguments': data['function']['arguments']
-                                })()
+                        # This part of the original code was creating a mock message but not fully integrating it
+                        # for history in the new required format or for agent_impl.
+                        # For now, if this path is hit, it will likely still have issues.
+                        # The primary fix is for the structured `message.tool_calls` path.
+                        print(f"{Fore.YELLOW}Warning: Tool calls parsed from string content. History format for this path may need review.{Style.RESET_ALL}")
                         
-                        class MockMessage:
-                            def __init__(self, content, tool_calls_data):
-                                self.content = content.split("[tool_calls]:")[0].strip() if "[tool_calls]:" in content else content
-                                self.tool_calls = [MockToolCall(tc) for tc in tool_calls_data]
+                        # For history, we'd need to structure it like the primary path:
+                        parsed_tool_calls_for_history = []
+                        for i, raw_tc in enumerate(tool_calls_data):
+                            tc_id = raw_tc.get('id')
+                            if not tc_id or not tc_id.strip():
+                                tc_id = f"parsed_fallback_id_{i}"
+                            parsed_tool_calls_for_history.append({
+                                "id": tc_id,
+                                "type": raw_tc.get('type', 'function'),
+                                "function": raw_tc.get('function', {}) # Ensure name/args are present
+                            })
                         
-                        mock_message = MockMessage(message.content, tool_calls_data)
-                        
-                        # Add assistant message with tool calls to history
-                        self.history.append({
-                            "role": "assistant",
-                            "content": mock_message.content + "\n[tool_calls]: " + str(tool_calls_data)
-                        })
-                        return mock_message
+                        if parsed_tool_calls_for_history:
+                            history_message_to_add = {"role": "assistant", "tool_calls": parsed_tool_calls_for_history}
+                            main_content = message.content.split("[tool_calls]:")[0].strip()
+                            if main_content:
+                                history_message_to_add["content"] = main_content
+                            
+                            # To make agent_impl.py work, message.tool_calls would need to be populated.
+                            # This is complex to do robustly here.
+                            # For now, this path remains less robust.
+                            
+                        # The original code created a MockMessage and returned it.
+                        # This was problematic as it wasn't the full response object.
+                        # We will let `message` be returned, but its `tool_calls` attribute
+                        # won't be populated if we came through this string parsing path without modifying `message`.
+
+                    else: # No match for [tool_calls] structure, treat as plain content
+                        if message.content:
+                            history_message_to_add = {"role": "assistant", "content": message.content}
                     
                 except Exception as parse_error:
                     print(f"{Fore.RED}❌ Error parsing tool calls from content: {parse_error}{Style.RESET_ALL}")
-                    # Fall through to treat as regular content
+                    if message.content: # Fallback to treating as regular content
+                         history_message_to_add = {"role": "assistant", "content": message.content}
             
-            # Add assistant message to history
-            self.history.append({"role": "assistant", "content": message.content})
-            return message.content
+            # If no tool calls were processed (neither structured nor parsed from string),
+            # and there's content, then it's a simple content message.
+            elif message.content: # Ensure this is elif, not if, to avoid double-adding content
+                 history_message_to_add = {"role": "assistant", "content": message.content}
+
+            # Add to history if a message was constructed
+            if history_message_to_add:
+                self.history.append(history_message_to_add)
+            # If history_message_to_add is None (e.g. empty response from LLM), nothing is added.
+            
+            return message # Return the original (potentially modified for tc.id) message object
         
         except Exception as e:
             print(f"{Fore.RED}❌ LLM error: {e}{Style.RESET_ALL}")

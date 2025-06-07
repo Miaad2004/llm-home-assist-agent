@@ -92,57 +92,75 @@ class MyAgent(DeviceCommandAgent):
                     print(f"{Fore.GREEN}{Style.BRIGHT}[AGENT RESPONSE]{Style.RESET_ALL} {Fore.WHITE}{response.content}")
                     return response.content
                 break
-            
-            # Process each tool call
+              # Process each tool call
             for tool_call in response.tool_calls:
-                tool_name = tool_call.function.name
+                # Ensure tool_name is not empty for Gemini compatibility
+                tool_name = getattr(tool_call.function, 'name', None) if hasattr(tool_call, 'function') else None
+                safe_tool_name = tool_name if tool_name and tool_name.strip() else "unknown_tool"
                 
                 try:
                     # Parse the arguments
-                    args = json.loads(tool_call.function.arguments)
+                    args_str = getattr(tool_call.function, 'arguments', '{}') if hasattr(tool_call, 'function') else '{}'
+                    args = json.loads(args_str)
                     print(f"\n{Fore.CYAN}{'='*60}")
-                    print(f"{Fore.YELLOW}{Style.BRIGHT}[TOOL CALL {current_iteration}]{Style.RESET_ALL} {Fore.WHITE}{tool_name} called with parameters:")
+                    print(f"{Fore.YELLOW}{Style.BRIGHT}[TOOL CALL {current_iteration}]{Style.RESET_ALL} {Fore.WHITE}{safe_tool_name} called with parameters:")
                     print(f"{Fore.GREEN}{json.dumps(args, indent=2)}")
                     print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
                     
                     # Execute the tool
-                    if tool_name in self.tools:
+                    if tool_name and tool_name in self.tools:
                         tool_function = self.tools[tool_name]["function"]
                         result = tool_function(**args)
                         print(f"{Fore.MAGENTA}{Style.BRIGHT}[TOOL RESPONSE]{Style.RESET_ALL} {Fore.WHITE}{tool_name} returned:")
                         if not isinstance(result, str):
                             print(f"{Fore.GREEN}{json.dumps(result, indent=2)}")
                         else:
-                            print(f"{Fore.GREEN}{result}")
-                        # Add the tool result to the conversation
+                            print(f"{Fore.GREEN}{result}")                        # Add the tool result to the conversation
+                        # Ensure tool_call_id is not empty for Gemini compatibility
+                        tool_call_id = getattr(tool_call, 'id', 'unknown_id')
+                        safe_tool_call_id = tool_call_id if tool_call_id and tool_call_id.strip() else 'unknown_id'
                         self.llm_client.history.append({
                             "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "name": tool_name,
+                            "tool_call_id": safe_tool_call_id,
+                            "name": safe_tool_name,
                             "content": str(result)
-                        })
+                        })                    
+                    
                     else:
                         error_msg = f"Error: Tool '{tool_name}' not found"
                         print(f"{Fore.RED}{Style.BRIGHT}[TOOL ERROR]{Style.RESET_ALL} {Fore.WHITE}{error_msg}")
+                        # Ensure tool_name is not empty for Gemini compatibility
+                        safe_tool_name = tool_name if tool_name and tool_name.strip() else "unknown_tool"
+                        # Ensure tool_call_id is not empty for Gemini compatibility
+                        tool_call_id = getattr(tool_call, 'id', 'unknown_id')
+                        safe_tool_call_id = tool_call_id if tool_call_id and tool_call_id.strip() else 'unknown_id'
                         self.llm_client.history.append({
                             "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "name": tool_name,
+                            "tool_call_id": safe_tool_call_id,
+                            "name": safe_tool_name,
                             "content": error_msg
-                        })
+                        })                
+                        
                 except Exception as e:
                     error_msg = f"Error: {str(e)}"
                     print(f"{Fore.RED}{Style.BRIGHT}[TOOL ERROR]{Style.RESET_ALL} {Fore.WHITE}{error_msg}")
+                    # Ensure tool_name is not empty for Gemini compatibility
+                    safe_tool_name = tool_name if tool_name and tool_name.strip() else "unknown_tool"
+                    # Ensure tool_call_id is not empty for Gemini compatibility
+                    tool_call_id = getattr(tool_call, 'id', 'unknown_id')
+                    safe_tool_call_id = tool_call_id if tool_call_id and tool_call_id.strip() else 'unknown_id'
                     self.llm_client.history.append({
                         "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "name": tool_name,
+                        "tool_call_id": safe_tool_call_id,
+                        "name": safe_tool_name,
                         "content": error_msg
-                    })              # Get the next response - this could be another tool call or a content response
+                    })
+                    
+            # Get the next response - this could be another tool call or a content response
             # If we're on the last iteration, set tool_choice to "none" to force a text response
             tool_choice = "none" if current_iteration >= max_iterations - 1 else "auto"
-            # Using a more neutral message for continuing the conversation
-            response = self.llm_client.send_prompt(None, tools=formatted_tools, tool_choice=tool_choice)
+            # Using empty string instead of None for continuing the conversation
+            response = self.llm_client.send_prompt("", tools=formatted_tools, tool_choice=tool_choice)
             if isinstance(response, str):
                 print(f"{Fore.GREEN}{Style.BRIGHT}[AGENT RESPONSE]{Style.RESET_ALL} {Fore.WHITE}{response}")
                 return response
