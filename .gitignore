@@ -71,3 +71,4 @@ Thumbs.db
 
 smart-home-assistant/agent_venv/
 *.pth
+*.pt

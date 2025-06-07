@@ -7,6 +7,7 @@ import tempfile
 #import scipy.io.wavfile
 from config.settings import Settings
 from colorama import Fore, Style, init
+import shutil
 
 # Initialize colorama for Windows compatibility
 init(autoreset=True)
@@ -23,6 +24,16 @@ class WhisperSTT:
         self.model_size = model_size
         self._load_model()  # Load model on initialization
     
+    def _clear_corrupted_model(self, model_dir):
+        """Clear corrupted model files from the directory"""
+        try:
+            if os.path.exists(model_dir):
+                print(f"{Fore.YELLOW}[STT] Clearing corrupted model files from {model_dir}{Style.RESET_ALL}")
+                shutil.rmtree(model_dir)
+                os.makedirs(model_dir, exist_ok=True)
+        except Exception as e:
+            print(f"{Fore.RED}[STT] Warning: Could not clear model directory: {str(e)}{Style.RESET_ALL}")
+    
     def _load_model(self):
         """Load the Whisper model if not already loaded"""
         if self.model is None:
@@ -33,17 +44,35 @@ class WhisperSTT:
                 local_model_path = Settings.WHISPER_MODEL_PATH
                 local_model_dir = os.path.dirname(local_model_path)
                 
+                # Try loading existing model first
                 if os.path.exists(local_model_path):
-                    print(f"{Fore.GREEN}[STT] Using local model file: {local_model_path}{Style.RESET_ALL}")
-                    self.model = whisper.load_model(local_model_path)
-                else:
-                    print(f"{Fore.YELLOW}[STT] Local model file not found, downloading model...{Style.RESET_ALL}")
-                    os.makedirs(local_model_dir, exist_ok=True)
-                    self.model = whisper.load_model(self.model_size, download_root=local_model_dir)
-                    print(f"{Fore.GREEN}[STT] Model downloaded and saved to {local_model_dir}{Style.RESET_ALL}")
+                    try:
+                        print(f"{Fore.GREEN}[STT] Using local model file: {local_model_path}{Style.RESET_ALL}")
+                        self.model = whisper.load_model(local_model_path)
+                        print(f"{Fore.GREEN}[STT] Model loaded successfully{Style.RESET_ALL}")
+                        return self.model
+                    except Exception as e:
+                        print(f"{Fore.YELLOW}[STT] Local model file corrupted: {str(e)}{Style.RESET_ALL}")
+                        self._clear_corrupted_model(local_model_dir)
+                
+                # Download model with retry logic
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        print(f"{Fore.YELLOW}[STT] Downloading model (attempt {attempt + 1}/{max_retries})...{Style.RESET_ALL}")
+                        os.makedirs(local_model_dir, exist_ok=True)
+                        self.model = whisper.load_model(self.model_size, download_root=local_model_dir)
+                        print(f"{Fore.GREEN}[STT] Model downloaded and loaded successfully{Style.RESET_ALL}")
+                        break
+                    except Exception as e:
+                        print(f"{Fore.RED}[STT] Download attempt {attempt + 1} failed: {str(e)}{Style.RESET_ALL}")
+                        if "checksum" in str(e).lower() or "sha256" in str(e).lower():
+                            self._clear_corrupted_model(local_model_dir)
+                        if attempt == max_retries - 1:
+                            print(f"{Fore.RED}[STT] All download attempts failed. Falling back to online model.{Style.RESET_ALL}")
+                            self.model = whisper.load_model(self.model_size)
             else:
                 self.model = whisper.load_model(self.model_size)
-                
                 
             print(f"{Fore.GREEN}[STT] Model loaded successfully{Style.RESET_ALL}")
         return self.model
