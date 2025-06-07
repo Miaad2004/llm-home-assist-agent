@@ -30,6 +30,7 @@ class XTTS_TTS(VoiceAssistantInterface):
         self.tts = None
         self.speaker_male = Settings.XTTS_MALE_VOICE
         self.speaker_female = Settings.XTTS_FEMALE_VOICE
+        self.speech_rate = Settings.XTTS_SPEED
         
         self._initialize_tts()
 
@@ -40,7 +41,7 @@ class XTTS_TTS(VoiceAssistantInterface):
             self.tts = TTS(model_path=self.model_path, config_path=self.config_path).to(self.device)
 
     
-    def synthesize_to_file(self, text: str, output_path: str = None, voice: str = "female") -> str:
+    def synthesize_to_file(self, text: str, output_path: str = None, voice: str = "male") -> str:
         """
         Synthesize text to an audio file.
         
@@ -48,11 +49,13 @@ class XTTS_TTS(VoiceAssistantInterface):
             text: Text to synthesize
             output_path: Optional path for output file. If None, creates file in download folder.
             voice: Speaker name or "male"/"female" for default voices
+            speed: Speech rate multiplier (1.0 = normal, >1.0 = faster, <1.0 = slower)
             
         Returns:
             Filename (not full path) of the generated audio file in the download folder
         """
         try:
+            
             self._initialize_tts()
             
             if output_path is None:
@@ -77,13 +80,15 @@ class XTTS_TTS(VoiceAssistantInterface):
             print(f"{Fore.YELLOW}Generating speech with XTTS...{Style.RESET_ALL}")
             print(f"{Fore.BLUE}[TTS] Text: {text}{Style.RESET_ALL}")
             print(f"{Fore.BLUE}[TTS] Speaker: {speaker}{Style.RESET_ALL}")
+            print(f"{Fore.BLUE}[TTS] Speed: {self.speech_rate}x{Style.RESET_ALL}")
             
             # Generate speech with XTTS
             self.tts.tts_to_file(
                 text=text,
                 speaker=speaker,
                 language="en",
-                file_path=output_path
+                file_path=output_path,
+                #speed=self.speech_rate
             )
             
             print(f"{Fore.GREEN}Audio generated successfully: {output_path}{Style.RESET_ALL}")

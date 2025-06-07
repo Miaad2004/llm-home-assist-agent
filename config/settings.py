@@ -25,4 +25,5 @@ class Settings:
     XTTS_MALE_VOICE = os.getenv("XTTS_MALE_VOICE", "Viktor Eka")  # Default voice for XTTS
     XTTS_FEMALE_VOICE = os.getenv("XTTS_FEMALE_VOICE", "Lidiya Szekeres")  # Default voice for XTTS
     LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))  # Default temperature for LLM
+    XTTS_SPEED = float(os.getenv("XTTS_SPEED", "1.0"))  # Default speed for XTTS
     
