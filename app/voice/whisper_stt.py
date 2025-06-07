@@ -21,6 +21,7 @@ class WhisperSTT:
         """Initialize with specified Whisper model size"""
         self.model = None
         self.model_size = model_size
+        self._load_model()  # Load model on initialization
     
     def _load_model(self):
         """Load the Whisper model if not already loaded"""
