@@ -16,23 +16,34 @@ class TTSImpl:
         """
         # TODO: Implement actual TTS synthesis
         print(f"[TTS] Speaking: {message}")
-    
+        
     def synthesize_to_file(self, text: str, output_path: str = None) -> str:
         """
         Synthesize text to an audio file.
         
         Args:
             text: Text to synthesize
-            output_path: Optional path for output file. If None, creates temp file.
+            output_path: Optional path for output file. If None, creates file in download folder.
             
         Returns:
-            Path to the generated audio file
+            Filename (not full path) of the generated audio file in the download folder
         """
         if output_path is None:
-            # Create temporary file
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-            output_path = temp_file.name
-            temp_file.close()
+            # Import settings to get download folder path
+            from config.settings import Settings
+            
+            # Create filename based on text hash for uniqueness
+            import hashlib
+            text_hash = hashlib.md5(text.encode()).hexdigest()[:8]
+            filename = f"tts_output_{text_hash}.wav"
+            
+            # Ensure download folder exists
+            download_folder = Settings.DOWNLOAD_FOLDER_PATH
+            os.makedirs(download_folder, exist_ok=True)
+              # Create full path in download folder
+            output_path = os.path.join(download_folder, filename)
+        else:
+            filename = os.path.basename(output_path)
         
         # TODO: Implement actual TTS synthesis to file
         # For now, create a placeholder file
@@ -40,4 +51,6 @@ class TTSImpl:
             f.write(f"# Audio file placeholder for: {text}")
         
         print(f"[TTS] Synthesized to file: {output_path}")
-        return output_path
+        
+        # Return only the filename for security when using download folder
+        return filename

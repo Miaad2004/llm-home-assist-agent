@@ -17,3 +17,4 @@ class Settings:
     ARDUINO_PORT = os.getenv("ARDUINO_PORT", "COM3" if os.name == "nt" else "/dev/ttyACM0")
     ARDUINO_BAUDRATE = os.getenv("ARDUINO_BAUDRATE", "9600")
     DEVICES_CONFIG_PATH = os.getenv("DEVICES_CONFIG_PATH", os.path.join(os.path.dirname(__file__), '..', 'config', 'devices.json'))
+    DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH", os.path.join(os.path.dirname(__file__), '..', 'downloads'))

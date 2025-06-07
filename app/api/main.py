@@ -295,19 +295,20 @@ async def get_available_tools():
 # Text-to-Speech endpoint
 @app.post("/tts/synthesize")
 async def text_to_speech(request: TTSRequest):
-    """Convert text to speech and return audio file."""
+    """Convert text to speech and return audio file metadata."""
     if tts_service is None:
         raise HTTPException(status_code=500, detail="TTS service not initialized")
     
     try:
-        # Generate audio file (mock implementation for now)
-        audio_file_path = tts_service.synthesize_to_file(request.text)
+        # Generate audio file (returns filename only for security)
+        audio_filename = tts_service.synthesize_to_file(request.text)
         
-        # Return file path and metadata
+        # Return filename and metadata
         return {
             "message": f"TTS synthesis completed for: '{request.text}'",
             "voice": request.voice,
-            "audio_file_path": audio_file_path,
+            "audio_filename": audio_filename,
+            "download_url": f"/files/download?filename={audio_filename}",
             "status": "success",
             "note": "TTS implementation is pending - this is a mock response with placeholder file"
         }
@@ -322,17 +323,89 @@ async def text_to_speech_file(request: TTSRequest):
         raise HTTPException(status_code=500, detail="TTS service not initialized")
     
     try:
-        # Generate audio file
-        audio_file_path = tts_service.synthesize_to_file(request.text)
+        from config.settings import Settings
+        
+        # Generate audio file (returns filename only)
+        audio_filename = tts_service.synthesize_to_file(request.text)
+        
+        # Construct full path from download folder and filename
+        download_folder = Settings.DOWNLOAD_FOLDER_PATH
+        audio_file_path = os.path.join(download_folder, audio_filename)
         
         # Return the file for download
         return FileResponse(
             path=audio_file_path,
             media_type='audio/wav',
-            filename=f"tts_output_{hash(request.text)}.wav"
+            filename=audio_filename
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in TTS synthesis: {str(e)}")
+
+# Secure file download endpoint
+@app.get("/files/download")
+async def download_file(filename: str):
+    """Download a file by filename from the secure download folder.
+    
+    Args:
+        filename: The name of the file to download (filename only, no paths)
+        
+    Returns:
+        FileResponse with the requested file from the download folder
+        
+    Security: Only allows downloading files from the designated download folder.
+    Prevents directory traversal attacks by validating filename and checking folder.
+    """
+    try:
+        from config.settings import Settings
+        
+        # Security check: ensure filename contains no path separators
+        if '/' in filename or '\\' in filename or '..' in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename: path separators not allowed")
+        
+        # Construct the full file path within the download folder
+        download_folder = Settings.DOWNLOAD_FOLDER_PATH
+        file_path = os.path.join(download_folder, filename)
+        
+        # Normalize paths to prevent directory traversal
+        download_folder = os.path.abspath(download_folder)
+        file_path = os.path.abspath(file_path)
+        
+        # Security check: ensure the resolved path is within the download folder
+        if not file_path.startswith(download_folder):
+            raise HTTPException(status_code=403, detail="Access denied: file outside download folder")
+        
+        # Check if file exists and is a file
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not os.path.isfile(file_path):
+            raise HTTPException(status_code=400, detail="Path is not a file")
+        
+        # Determine media type based on file extension
+        file_extension = os.path.splitext(filename)[1].lower()
+        media_type_map = {
+            '.wav': 'audio/wav',
+            '.mp3': 'audio/mpeg',
+            '.mp4': 'video/mp4',
+            '.txt': 'text/plain',
+            '.json': 'application/json',
+            '.pdf': 'application/pdf',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg'
+        }
+        media_type = media_type_map.get(file_extension, 'application/octet-stream')
+        
+        # Return the file for download
+        return FileResponse(
+            path=file_path,
+            media_type=media_type,
+            filename=filename
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error downloading file: {str(e)}")
 
 # Speech-to-Text endpoint
 @app.post("/stt/transcribe", response_model=STTResponse)

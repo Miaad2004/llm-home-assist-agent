@@ -151,14 +151,21 @@
             <button onclick="transcribeAudio()">Transcribe Audio File</button>
             <button onclick="startLiveTranscription()">Start Live Transcription</button>
             <div id="sttResponse" class="response"></div>
-        </div>
-
-        <!-- Voice Chat -->
+        </div> <!-- Voice Chat -->
         <div class="section">
             <h2>💬 Voice Chat</h2>
             <input type="file" id="voiceChatFile" accept="audio/*" class="file-input">
             <button onclick="voiceChat()">Start Voice Chat</button>
             <div id="voiceChatResponse" class="response"></div>
+        </div> <!-- File Download -->
+        <div class="section">
+            <h2>📁 File Download</h2>
+            <input type="text" id="filePathInput"
+                placeholder="Enter filename to download (e.g., tts_output_abc123.wav)..."
+                style="width: 400px; margin-bottom: 10px;">
+            <button onclick="downloadFileByPath()">Download File</button>
+            <button onclick="downloadLastTTSFile()">Download Last TTS File</button>
+            <div id="downloadResponse" class="response"></div>
         </div>
 
         <!-- Available Tools -->
@@ -168,9 +175,9 @@
             <div id="toolsResponse" class="response"></div>
         </div>
     </div>
-
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = 'http://localhost:8000';        // Store the last TTS filename for download
+        let lastTTSFilename = null;
 
         async function checkHealth() {
             try {
@@ -200,9 +207,13 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ text, voice })
-                });
+                }); const data = await response.json();
 
-                const data = await response.json();
+                // Store the filename for potential download
+                if (data.audio_filename) {
+                    lastTTSFilename = data.audio_filename;
+                }
+
                 document.getElementById('ttsResponse').innerHTML = JSON.stringify(data, null, 2);
                 document.getElementById('ttsResponse').className = 'response success';
             } catch (error) {
@@ -315,6 +326,59 @@
             } catch (error) {
                 document.getElementById('voiceChatResponse').innerHTML = `Error: ${error.message}`;
                 document.getElementById('voiceChatResponse').className = 'response error';
+            }
+        }        // Generic file download function (now uses filename parameter)
+        async function downloadFile(filename) {
+            try {
+                const response = await fetch(`${API_BASE}/files/download?filename=${encodeURIComponent(filename)}`);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                throw error;
+            }
+        }        // Download file by filename from user input
+        async function downloadFileByPath() {
+            const filename = document.getElementById('filePathInput').value.trim();
+
+            if (!filename) {
+                alert('Please enter a filename');
+                return;
+            }
+
+            try {
+                await downloadFile(filename);
+                document.getElementById('downloadResponse').innerHTML = `File downloaded successfully: ${filename}`;
+                document.getElementById('downloadResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('downloadResponse').innerHTML = `Error downloading file: ${error.message}`;
+                document.getElementById('downloadResponse').className = 'response error';
+            }
+        }        // Download the last TTS generated file
+        async function downloadLastTTSFile() {
+            if (!lastTTSFilename) {
+                alert('No TTS file available. Please generate TTS first using "Synthesize Speech".');
+                return;
+            }
+
+            try {
+                await downloadFile(lastTTSFilename);
+                document.getElementById('downloadResponse').innerHTML = `TTS file downloaded successfully: ${lastTTSFilename}`;
+                document.getElementById('downloadResponse').className = 'response success';
+            } catch (error) {
+                document.getElementById('downloadResponse').innerHTML = `Error downloading TTS file: ${error.message}`;
+                document.getElementById('downloadResponse').className = 'response error';
             }
         }
 
