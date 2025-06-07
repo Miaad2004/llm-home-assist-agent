@@ -161,7 +161,8 @@ class TTSImpl:
         Args:
             text: The text to be synthesized
             voice: "male", "female", or "auto" voice selection
-            
+                (Note: All formats must alternate [S1] and [S2] per Dia requirements)
+                
         Returns:
             Formatted text string for Dia model
         """
@@ -171,23 +172,25 @@ class TTSImpl:
         
         formatted_parts = []
         
-        if voice.lower() == "male":
-            # Use [S2] for male voice
-            speaker_tag = "[S2]"
-            for sentence in sentences:
-                formatted_parts.append(f"{speaker_tag}{sentence}.")
-        elif voice.lower() == "female":
-            # Use [S1] for female voice
-            speaker_tag = "[S1]"
-            for sentence in sentences:
-                formatted_parts.append(f"{speaker_tag}{sentence}.")
-        elif voice.lower() == "auto":
-            # Alternate between speakers for dialogue effect
-            for i, sentence in enumerate(sentences):
-                speaker_tag = "[S1]" if i % 2 == 0 else "[S2]"
+        # Dia requires alternating speakers regardless of voice type
+        # Always start with [S1]
+        for i, sentence in enumerate(sentences):
+            # For single sentences, always use [S1]
+            if len(sentences) == 1:
+                formatted_parts.append(f"[S1] {sentence}.")
+                break
+                
+            # For multiple sentences, alternate between [S1] and [S2]
+            # We always start with [S1]
+            speaker_tag = "[S1]" if i % 2 == 0 else "[S2]"
+            
+            # Add space after tag and ensure sentence ends with punctuation
+            if not sentence.endswith(('.', '!', '?')):
                 formatted_parts.append(f"{speaker_tag} {sentence}.")
+            else:
+                formatted_parts.append(f"{speaker_tag} {sentence}")
         
-        # Join all formatted sentences
+        # Join all formatted sentences with spaces
         return " ".join(formatted_parts)
 
     def _initialize_client(self):
