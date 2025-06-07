@@ -26,13 +26,14 @@ class WhisperSTT:
     
     def _clear_corrupted_model(self, model_dir):
         """Clear corrupted model files from the directory"""
-        try:
-            if os.path.exists(model_dir):
-                print(f"{Fore.YELLOW}[STT] Clearing corrupted model files from {model_dir}{Style.RESET_ALL}")
-                shutil.rmtree(model_dir)
-                os.makedirs(model_dir, exist_ok=True)
-        except Exception as e:
-            print(f"{Fore.RED}[STT] Warning: Could not clear model directory: {str(e)}{Style.RESET_ALL}")
+        # try:
+        #     if os.path.exists(model_dir):
+        #         print(f"{Fore.YELLOW}[STT] Clearing corrupted model files from {model_dir}{Style.RESET_ALL}")
+        #         shutil.rmtree(model_dir)
+        #         os.makedirs(model_dir, exist_ok=True)
+                
+        # except Exception as e:
+        #     print(f"{Fore.RED}[STT] Warning: Could not clear model directory: {str(e)}{Style.RESET_ALL}")
     
     def _load_model(self):
         """Load the Whisper model if not already loaded"""
