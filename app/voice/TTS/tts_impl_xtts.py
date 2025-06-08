@@ -71,6 +71,11 @@ class XTTS_TTS(VoiceAssistantInterface):
                 # Create full path in download folder
                 output_path = os.path.join(download_folder, filename)
                 
+                # cehck if file already exists
+                if os.path.exists(output_path):
+                    print(f"{Fore.YELLOW}File already exists: {output_path}{Style.RESET_ALL}")
+                    return filename
+                
             else:
                 filename = os.path.basename(output_path)
             

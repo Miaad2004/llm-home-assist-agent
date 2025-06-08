@@ -35,10 +35,19 @@ app = FastAPI(
 # Add CORS middleware to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=[
+        # Specific origins allowed:
+        "*",
+        "https://lovable.dev",      # If still needed
+        "https://*.lovable.app",    # For lovable.app subdomains
+        "http://localhost:*",       # For local development
+        "http://127.0.0.1:*"        # For local development
+        'null'
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Global variables to store the agent and LLM client
@@ -342,12 +351,21 @@ async def text_to_speech_file(request: TTSRequest):
         download_folder = Settings.DOWNLOAD_FOLDER_PATH
         audio_file_path = os.path.join(download_folder, audio_filename)
         
-        # Return the file for download
-        return FileResponse(
+        # Return the file for download with proper CORS headers
+        response = FileResponse(
             path=audio_file_path,
             media_type='audio/wav',
             filename=audio_filename
         )
+        
+        # Add comprehensive CORS headers
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "3600"
+        
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in TTS synthesis: {str(e)}")
     
@@ -405,13 +423,21 @@ async def download_file(filename: str):
             '.jpeg': 'image/jpeg'
         }
         media_type = media_type_map.get(file_extension, 'application/octet-stream')
-        
-        # Return the file for download
-        return FileResponse(
+          # Return the file for download with proper CORS headers
+        response = FileResponse(
             path=file_path,
             media_type=media_type,
             filename=filename
         )
+        
+        # Add comprehensive CORS headers
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "3600"
+        
+        return response
     except HTTPException:
         raise
     except Exception as e:
