@@ -123,10 +123,10 @@ def initialize_agent():
         )
         
         # Initialize voice services
-        if Settings.TTS_MODEL == "XTTS":
+        if Settings.TTS_MODEL.strip().split()[0] == "XTTS":
             tts_service = XTTS_TTS()
         
-        elif Settings.TTS_MODEL == "DAYA":
+        elif Settings.TTS_MODEL.strip().split()[0]  == "DAYA":
             tts_service = DAYA_TTS()
         
         else:
@@ -211,6 +211,7 @@ async def update_system_prompt(request: SystemPromptRequest):
     try:
         llm_client.update_system_prompt(request.system_prompt)
         return {"status": "success", "message": "System prompt updated"}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating system prompt: {str(e)}")
 
@@ -548,6 +549,7 @@ async def control_device(request: DeviceControlRequest):
         return DeviceResponse(message=result)
     except HTTPException:
         raise
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error controlling device: {str(e)}")
 
