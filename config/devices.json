@@ -5,7 +5,7 @@
     "description": "Ceiling LED light in the bedroom.",
     "type": "lamp",
     "location": "bedroom",
-    "pin": 10,
+    "pin": 8,
     "status": "off"
   },
   {
@@ -13,33 +13,6 @@
     "name": "Living Room Lamp",
     "description": "Corner lamp in the living room.",
     "type": "lamp",
-    "location": "living_room",
-    "pin": 6,
-    "status": "off"
-  },
-  {
-    "id": "kitchen_light",
-    "name": "Kitchen Light",
-    "description": "Main kitchen light.",
-    "type": "lamp",
-    "location": "kitchen",
-    "pin": 7,
-    "status": "off"
-  },
-  {
-    "id": "ac_bedroom",
-    "name": "Bedroom AC",
-    "description": "Air conditioner in bedroom.",
-    "type": "ac",
-    "location": "bedroom",
-    "pin": 8,
-    "status": "off"
-  },
-  {
-    "id": "tv_living",
-    "name": "Living Room TV",
-    "description": "Smart TV in living room.",
-    "type": "tv",
     "location": "living_room",
     "pin": 9,
     "status": "off"

@@ -25,7 +25,7 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            height: 400px;
+            height: 600px;
             overflow-y: auto;
             margin-bottom: 20px;
         }
@@ -98,6 +98,36 @@
             gap: 8px;
             font-size: 14px;
             color: #666;
+        }
+
+        .formatted-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .formatted-content strong {
+            font-weight: bold;
+        }
+
+        .formatted-content em {
+            font-style: italic;
+        }
+
+        .formatted-content code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .formatted-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .formatted-content li {
+            margin: 4px 0;
         }
     </style>
 </head>
@@ -207,6 +237,52 @@
             }
         }
 
+        function formatAssistantMessage(content) {
+            // Convert **text** to <strong>text</strong>
+            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Convert *text* to <em>text</em>
+            content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Convert `code` to <code>code</code>
+            content = content.replace(/`(.*?)`/g, '<code>$1</code>');
+
+            // Convert bullet points (- item or * item) to unordered lists
+            const lines = content.split('\n');
+            let inList = false;
+            let result = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const isBulletPoint = /^[-*]\s+/.test(line);
+
+                if (isBulletPoint) {
+                    if (!inList) {
+                        result.push('<ul>');
+                        inList = true;
+                    }
+                    const listItem = line.replace(/^[-*]\s+/, '');
+                    result.push(`<li>${listItem}</li>`);
+                } else {
+                    if (inList) {
+                        result.push('</ul>');
+                        inList = false;
+                    }
+                    if (line) {
+                        result.push(line);
+                    } else {
+                        result.push('');
+                    }
+                }
+            }
+
+            if (inList) {
+                result.push('</ul>');
+            }
+
+            return result.join('\n');
+        }
+
         function addMessage(content, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message`;
@@ -214,7 +290,8 @@
             if (sender === 'user') {
                 messageDiv.innerHTML = `<strong>You:</strong> ${content}`;
             } else {
-                messageDiv.innerHTML = `<strong>Assistant:</strong> ${content}`;
+                const formattedContent = formatAssistantMessage(content);
+                messageDiv.innerHTML = `<strong>Assistant:</strong> <div class="formatted-content">${formattedContent}</div>`;
             }
 
             chatContainer.appendChild(messageDiv);

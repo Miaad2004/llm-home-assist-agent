@@ -23,7 +23,7 @@ void setup()
     for (int i = 2; i <= maxPins; i++)
     {
         pinMode(i, OUTPUT);
-        digitalWrite(i, LOW); // Start with everything off
+        digitalWrite(i, HIGH); // Start with everything off
     }
 
     Serial.println("Arduino Ready");
@@ -46,7 +46,7 @@ void loop()
             if (pin >= 2 && pin <= maxPins)
             {
                 // Set pin state
-                digitalWrite(pin, value == 1 ? HIGH : LOW);
+                digitalWrite(pin, value == 1 ? LOW : HIGH);
                 Serial.println("OK");
             }
             else
