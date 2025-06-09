@@ -72,3 +72,18 @@ Thumbs.db
 smart-home-assistant/agent_venv/
 *.pth
 *.pt
+
+
+
+
+
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Vite cache
+.vite/
