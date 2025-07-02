@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import CopyButton from './CopyButton';
 
+
 interface ChatMessage {
   id: string;
   text: string;
@@ -34,6 +35,7 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
   const audioChunksRef = useRef<Blob[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const wakeTriggeredRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
     refreshDevices: () => {
@@ -92,63 +94,77 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
     }
   };
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        console.log('Loading chat history from /llm/history...');
-        
-        const response = await fetch('http://localhost:8000/llm/history', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
 
-        console.log('History response status:', response.status);
+useEffect(() => {
+  const loadHistory = async () => {
+    try {
+      console.log('Loading chat history from /llm/history...');
+      
+      const response = await fetch('http://localhost:8000/llm/history', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      console.log('History response status:', response.status);
 
-        const data = await response.json();
-        console.log('History data:', data);
-
-        // Process the history messages
-        if (data.history && Array.isArray(data.history)) {
-          const chatMessages: ChatMessage[] = data.history
-            .filter((msg: HistoryMessage) => msg.role === 'user' || msg.role === 'assistant')
-            .map((msg: HistoryMessage, index: number) => ({
-              id: `history-${index}`,
-              text: msg.content,
-              isUser: msg.role === 'user',
-              timestamp: new Date()
-            }));
-          
-          setMessages(chatMessages);
-          console.log('Loaded', chatMessages.length, 'messages from history');
-        } else {
-          console.log('No valid history found, starting with empty chat');
-          setMessages([]);
-        }
-      } catch (error) {
-        console.error('Error loading chat history:', error);
-        // Set default welcome message if history loading fails
-        const welcomeMessage: ChatMessage = {
-          id: '1',
-          text: language === 'en' 
-            ? 'Hello! I\'m your smart home assistant. How can I help you today?' 
-            : 'سلام! من دستیار خانه هوشمند شما هستم. چطور می‌تونم کمکتون کنم؟',
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages([welcomeMessage]);
-      } finally {
-        setIsLoadingHistory(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    loadHistory();
-  }, [language]);
+      const data = await response.json();
+      console.log('History data:', data);
+
+      if (data.history && Array.isArray(data.history)) {
+        const chatMessages: ChatMessage[] = data.history
+          .filter((msg: HistoryMessage) => msg.role === 'user' || msg.role === 'assistant')
+          .map((msg: HistoryMessage, index: number) => ({
+            id: `history-${index}`,
+            text: msg.content,
+            isUser: msg.role === 'user',
+            timestamp: new Date()
+          }));
+        
+        setMessages(chatMessages);
+        console.log('Loaded', chatMessages.length, 'messages from history');
+      } else {
+        console.log('No valid history found, starting with empty chat');
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+
+      const welcomeMessage: ChatMessage = {
+        id: '1',
+        text: language === 'en' 
+          ? 'Hello! I\'m your smart home assistant. How can I help you today?' 
+          : 'سلام! من دستیار خانه هوشمند شما هستم. چطور می‌تونم کمکتون کنم؟',
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  
+  const handleWakeTriggered = () => {
+    wakeTriggeredRef.current = true;
+    console.log("🔊 Wake word detected: Starting voice input for 8 seconds...");
+    startRecording();
+  };
+
+  window.addEventListener("wake-word-detected", handleWakeTriggered);
+
+  loadHistory();
+
+  return () => {
+    window.removeEventListener("wake-word-detected", handleWakeTriggered);
+  };
+}, [language]);
+
 
   const handleTTS = async (messageText: string, messageId: string) => {
     if (playingMessageId === messageId) return; // Prevent replaying if already processing
@@ -304,7 +320,9 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
 
       mediaRecorder.onstop = async () => {
         console.log('Recording stopped, processing audio...');
-        
+
+         setIsRecording(false);
+      
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
         
@@ -315,6 +333,19 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
 
       mediaRecorder.start();
       setIsRecording(true);
+
+       if (wakeTriggeredRef.current) {
+      console.log("⏱ Timer started for 8 seconds (wake mode)...");
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          console.log("⏱ Timer hit: stopping recording (wake word mode)...");
+          stopRecording();
+        } else {
+          console.log("⚠️ Recorder already stopped before timeout.");
+        }
+      }, 8000);
+    }
+
 
     } catch (error) {
       console.error('Error accessing microphone:', error);
@@ -332,13 +363,18 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
     }
   };
 
+
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      console.log('Stopping recording...');
+  if (mediaRecorderRef.current) {
+    try {
+      console.log('✅ Stopping MediaRecorder...');
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
+    } catch (err) {
+      console.error('❌ Error stopping recorder:', err);
     }
-  };
+  }
+};
+
 
   const processRecording = async () => {
     setIsTranscribing(true);
@@ -376,10 +412,14 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
       if (data.status === 'success' && data.transcription) {
         // Insert transcription as user message and trigger send
         setInputText(data.transcription);
+
+          const triggeredByWake = wakeTriggeredRef.current;
+
+          wakeTriggeredRef.current = false;
         
         // Automatically send the transcribed message
         setTimeout(() => {
-          handleSendMessage(data.transcription);
+          handleSendMessage(data.transcription, triggeredByWake);
         }, 100);
       } else {
         throw new Error('Transcription failed');
@@ -426,7 +466,7 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
     }
   };
 
-  const handleSendMessage = async (messageText?: string) => {
+  const handleSendMessage = async (messageText?: string, triggeredByWake = false) => {
     const textToSend = messageText || inputText;
     if (!textToSend.trim() || isLoading) return;
 
@@ -473,6 +513,14 @@ const ChatInterface = forwardRef<{ refreshDevices: () => void }, ChatInterfacePr
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+          if (triggeredByWake) {
+            setTimeout(() => {
+              handleTTS(assistantMessage.text, assistantMessage.id);
+              wakeTriggeredRef.current = false; 
+            }, 300);
+          }
+        
 
       // Refresh devices after assistant response
       if (onDeviceRefresh) {
