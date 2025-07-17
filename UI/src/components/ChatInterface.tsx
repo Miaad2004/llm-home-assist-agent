@@ -4,6 +4,7 @@ import { Send, MicIcon, Trash2, Volume2, Mic, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import CopyButton from './CopyButton';
+import ReactMarkdown from 'react-markdown';
 
 
 interface ChatMessage {
@@ -118,7 +119,9 @@ useEffect(() => {
 
       if (data.history && Array.isArray(data.history)) {
         const chatMessages: ChatMessage[] = data.history
-          .filter((msg: HistoryMessage) => msg.role === 'user' || msg.role === 'assistant')
+          .filter((msg: HistoryMessage) =>
+            (msg.role === 'user' || msg.role === 'assistant') && msg.content && msg.content.trim() !== ''
+            )
           .map((msg: HistoryMessage, index: number) => ({
             id: `history-${index}`,
             text: msg.content,
@@ -597,7 +600,9 @@ useEffect(() => {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <p className="text-sm leading-relaxed">{message.text}</p>
+                      <div className="text-sm leading-relaxed">
+                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                      </div>
                       <p className="text-xs opacity-70 mt-1">
                         {message.timestamp.toLocaleTimeString(language === 'fa' ? 'fa-IR' : 'en-US', {
                           hour: '2-digit',

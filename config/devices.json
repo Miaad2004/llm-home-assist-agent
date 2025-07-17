@@ -6,7 +6,7 @@
     "type": "lamp",
     "location": "bedroom",
     "pin": 8,
-    "status": "on"
+    "status": "off"
   },
   {
     "id": "living_lamp",
