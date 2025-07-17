@@ -3,7 +3,7 @@ import json
 from config.settings import Settings
 from urllib.parse import urljoin
 import requests
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 device_controller = None
 
@@ -177,16 +177,52 @@ class GenericTools:
         if Settings.VERBOSE_LEVEL > 1:
             print("GenericTools.search_web called with query:", query)
         
-        with DDGS() as ddgs:
-            results = ddgs.text(query, max_results=5)
-            output = []
-            for result in results:
-                output.append({
-                    'title': result['title'],
-                    'url': result['href'],
-                    'snippet': result['body']
-                })
-            return str(output)
+        try:
+            with DDGS() as ddgs:
+                # Try different search strategies for better results
+                print(f"Searching for: {query}")
+                
+                # First try with exact phrase (quotes)
+                quoted_query = f'"{query}"'
+                results = ddgs.text(quoted_query, max_results=3)
+                
+                # If no good results, try without quotes
+                if not results or len(results) < 2:
+                    print("Trying search without quotes...")
+                    results = ddgs.text(query, max_results=5)
+                
+                # If still poor results, try with site-specific search for academic content
+                if not results or not any('researchgate' in result.get('href', '').lower() or 
+                                        'scholar' in result.get('href', '').lower() or
+                                        'academia' in result.get('href', '').lower() 
+                                        for result in results):
+                    print("Trying site-specific search...")
+                    academic_query = f"{query} site:researchgate.net OR site:scholar.google.com OR site:academia.edu"
+                    academic_results = ddgs.text(academic_query, max_results=3)
+                    if academic_results:
+                        results.extend(academic_results)
+                
+                output = []
+                for result in results[:5]:  # Limit to 5 results
+                    output.append({
+                        'title': result['title'],
+                        'url': result['href'],
+                        'snippet': result['body']
+                    })
+                
+                # Print results for debugging
+                print(f"[SEARCH RESULTS] Found {len(output)} results for query: {query}")
+                for i, result in enumerate(output, 1):
+                    print(f"{i}. {result['title']}")
+                    print(f"   URL: {result['url']}")
+                    print(f"   Snippet: {result['snippet'][:150]}...")
+                    print()
+                
+                return str(output)
+                
+        except Exception as e:
+            print(f"Error in search_web: {e}")
+            return f"Search failed: {str(e)}"
     
     @staticmethod
     def get_devices() -> str:
